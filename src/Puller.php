@@ -13,6 +13,15 @@ class Puller
     protected ?CacheManager $cache_manager = null;
 
     /**
+     * @param  string|null  $guard
+     * @return Core\DispatchManager
+     */
+    public function new(string $guard = null)
+    {
+        return Pull::guard($guard);
+    }
+
+    /**
      * Maker of cache
      * @param  string|null  $guard
      * @param  int  $user_id

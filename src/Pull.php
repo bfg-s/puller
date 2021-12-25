@@ -14,9 +14,32 @@ class Pull
 
     protected ?int $for_id = null;
 
+    protected $default_handle_data = null;
+
+
     public function handle() {
-        //
+
+        return $this->default_handle_data;
     }
+
+    public function getName()
+    {
+        if ($this->name) {
+            return $this->name;
+        }
+        return \Str::snake(class_basename(static::class), '-');
+    }
+
+    public function getGuard()
+    {
+        return $this->guard ?? config('puller.guard');
+    }
+
+    public function getForId()
+    {
+        return $this->for_id;
+    }
+
 
     public function like(string $name)
     {
@@ -32,25 +55,10 @@ class Pull
         return $this;
     }
 
-    public function getName()
+    public function with($handle)
     {
-        if ($this->name) {
-            return $this->name;
-        }
-        return str_replace(
-            ["\\", ":-", "-pull"],
-            [":", ":", ""],
-            \Str::snake(class_basename(static::class), '-')
-        );
-    }
+        $this->default_handle_data = $handle;
 
-    public function getGuard()
-    {
-        return $this->guard ?? config('puller.guard');
-    }
-
-    public function getForId()
-    {
-        return $this->for_id;
+        return $this;
     }
 }

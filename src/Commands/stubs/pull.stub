@@ -1,0 +1,12 @@
+<?php
+
+namespace {{ namespace }};
+
+use Bfg\Puller\Pull;
+
+class {{ class }} extends Pull
+{
+    public function handle () {
+        //
+    }
+}

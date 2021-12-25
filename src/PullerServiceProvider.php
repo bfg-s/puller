@@ -2,6 +2,7 @@
 
 namespace Bfg\Puller;
 
+use Bfg\Puller\Commands\PullMakeCommand;
 use Bfg\Puller\Controllers\PullerMessageController;
 use Bfg\Puller\Core\DispatchManager;
 use Bfg\Puller\Core\Shutdown;
@@ -32,6 +33,13 @@ class PullerServiceProvider extends ServiceProvider
         $this->app->singleton(Shutdown::class, function () {
             return new Shutdown;
         });
+
+        if ($this->app->runningInConsole()) {
+
+            $this->commands([
+                PullMakeCommand::class
+            ]);
+        }
     }
 
     /**
