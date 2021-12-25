@@ -22,9 +22,6 @@ follow the online meter and a real-time list of users.
 
 
 
-
-
-
 ## Testing
 Run the tests with:
 
