@@ -1,0 +1,75 @@
+<?php
+
+namespace Bfg\Puller;
+
+use Bfg\Puller\Controllers\PullerMessageController;
+use Bfg\Puller\Core\DispatchManager;
+use Bfg\Puller\Core\Shutdown;
+use Bfg\Puller\Middlewares\PullerMessageMiddleware;
+use Illuminate\Support\ServiceProvider;
+
+class PullerServiceProvider extends ServiceProvider
+{
+    /**
+     * Register services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        $this->mergeConfigFrom(__DIR__ . '/../config/puller.php', 'puller');
+
+        \Route::aliasMiddleware('puller', PullerMessageMiddleware::class);
+
+        \Route::macro('puller', function (string $guard = null, bool $authorized = null) {
+            $guard = $guard ?: config('puller.guard');
+            $authorized = $authorized ?: config('puller.authorized');
+            \Route::get('/puller/message/{tab_hash}', PullerMessageController::class)
+                ->middleware(['web', "puller:{$guard}," . ($authorized ? 'auth' : 'all')])
+                ->name('puller.message');
+        });
+
+        $this->app->singleton(Shutdown::class, function () {
+            return new Shutdown;
+        });
+    }
+
+    /**
+     * Bootstrap services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        \Route::puller();
+
+        $this->publishes([
+            __DIR__ . '/../config/puller.php' => config_path('puller.php')
+        ], 'puller-config');
+
+        $this->publishes([
+            __DIR__ . '/../assets' => public_path('vendor/puller')
+        ], 'puller-assets');
+
+        $this->publishes([
+            __DIR__ . '/../assets' => public_path('vendor/puller')
+        ], 'laravel-assets');
+
+        app(Shutdown::class)
+            ->registerFunction([$this, 'writeCreatedJobs']);
+
+        //Header::queue('notification-warning', 'Your header got queued successfully!');
+
+        if (!request()->cookie('puller-session')) {
+            \Cookie::queue(
+                'puller-session',
+                md5(uniqid(time(), true))
+            );
+        }
+    }
+
+    public function writeCreatedJobs()
+    {
+        DispatchManager::fireQueue();
+    }
+}
