@@ -1,7 +1,7 @@
 # Puller (Long Pull)
 
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Travis](https://img.shields.io/travis/bfg/puller.svg?style=flat-square)]()
+[![Travis](https://img.shields.io/travis/bfg-/puller.svg?style=flat-square)]()
 [![Total Downloads](https://img.shields.io/packagist/dt/bfg/puller.svg?style=flat-square)](https://packagist.org/packages/bfg/puller)
 
 ## Install
