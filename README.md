@@ -18,7 +18,6 @@ tabs and send commands to all the user tabs at all,
 to all browsers. So, we have an excellent opportunity to 
 follow the online meter and a real-time list of users.
 
-
 ## Usage
 
 
