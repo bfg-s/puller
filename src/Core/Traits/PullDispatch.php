@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 
 trait PullDispatch
 {
+    /**
+     * @param  string  $guard
+     * @return DispatchManager|static
+     */
     public static function guard(string $guard)
     {
-        return (new DispatchManager(
-            static::class
-        ))->guard($guard);
+        return static::new()->guard($guard);
     }
 
     /**
@@ -20,20 +22,34 @@ trait PullDispatch
      */
     public static function for($user)
     {
-        if ($user instanceof Model) {
-            $user = $user->id;
-        }
-
-        return new DispatchManager(
-            static::class,
-            (is_int($user) ? $user : null)
-        );
+        return static::new()->for($user);
     }
 
+    /**
+     * @param ...$arguments
+     * @return bool
+     */
     public static function dispatch(...$arguments): bool
     {
-        return (new DispatchManager(
+        return static::new()->dispatch(...$arguments);
+    }
+
+    /**
+     * @param ...$arguments
+     * @return bool
+     */
+    public static function everyone(...$arguments): bool
+    {
+        return static::new()->everyone(...$arguments);
+    }
+
+    /**
+     * @return DispatchManager|static
+     */
+    public static function new()
+    {
+        return new DispatchManager(
             static::class
-        ))->dispatch(...$arguments);
+        );
     }
 }

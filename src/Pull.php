@@ -55,6 +55,13 @@ class Pull
         return $this;
     }
 
+    public function likeAlpine(string $store, string $storeMethod)
+    {
+        $this->name = "alpine:" . $store . "." . $storeMethod;
+
+        return $this;
+    }
+
     public function with($handle)
     {
         $this->default_handle_data = $handle;

@@ -9,8 +9,6 @@ trait Pullable
     public function pull(
         string $class
     ) {
-        return new DispatchManager(
-            $class
-        );
+        return (new DispatchManager($class))->for($this);
     }
 }

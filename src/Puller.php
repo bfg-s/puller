@@ -14,11 +14,20 @@ class Puller
 
     /**
      * @param  string|null  $guard
-     * @return Core\DispatchManager
+     * @return Core\DispatchManager|Pull
      */
     public function new(string $guard = null)
     {
         return Pull::guard($guard);
+    }
+
+    /**
+     * @param $user
+     * @return Core\DispatchManager|Pull
+     */
+    public function for($user)
+    {
+        return Pull::for($user);
     }
 
     /**
@@ -54,13 +63,17 @@ class Puller
         return $this->manager()->getUsers();
     }
 
+    public function identifications()
+    {
+        $list = $this->users();
+        if (isset($list[0])) {
+            unset($list[0]);
+        }
+        return array_keys($list);
+    }
+
     public function online()
     {
         return count($this->users());
-    }
-
-    public function isOnline()
-    {
-        return $this->manager()->isHasUser();
     }
 }

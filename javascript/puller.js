@@ -56,10 +56,20 @@ const subscribe = async () => {
             const results = resultJson.results;
             results.map(cmd => {
                 if (cmd.name) {
-                    const lw = /^livewire:(.*)/.exec(cmd.name);
-                    if (lw) {
+                    const livewire = /^livewire:(.*)/.exec(cmd.name);
+                    const alpine = /^alpine:([^\.]+).([^\.]+)$/.exec(cmd.name);
+                    if (livewire) {
                         if (window.Livewire) {
-                            window.Livewire.emit(lw[1], cmd.detail)
+                            window.Livewire.emit(livewire[1], cmd.detail)
+                        } else {
+                            console.error("Livewire not found!");
+                        }
+                    } else if (alpine) {
+                        if (window.Alpine) {
+                            let data = Alpine.store(alpine[1])[alpine[2]];
+                            if (data) {
+                                data(cmd.detail)
+                            }
                         } else {
                             console.error("Livewire not found!");
                         }

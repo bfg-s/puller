@@ -5,6 +5,9 @@ namespace Bfg\Puller\Core;
 use Bfg\Puller\Pull;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @template T
+ */
 class DispatchManager
 {
     /**
@@ -29,7 +32,7 @@ class DispatchManager
      * User recipient
      * @var int|null
      */
-    protected ?int $for_id;
+    protected ?int $for_id = null;
 
     /**
      * Apply methods for worker class
@@ -38,7 +41,7 @@ class DispatchManager
     protected array $methods = [];
 
     /**
-     * @param  string  $class
+     * @param  string|T  $class
      * @param  int|null  $for_id
      */
     public function __construct(
@@ -52,7 +55,7 @@ class DispatchManager
     /**
      * Select user for dispatch
      * @param $user
-     * @return $this
+     * @return static|T
      */
     public function for($user): DispatchManager
     {
@@ -60,7 +63,9 @@ class DispatchManager
             $user = $user->id;
         }
 
-        $this->for_id = $user;
+        if (is_numeric($user)) {
+            $this->for_id = (int) $user;
+        }
 
         return $this;
     }
@@ -68,7 +73,7 @@ class DispatchManager
     /**
      * Select guard for user dispatch
      * @param  string  $guard
-     * @return $this
+     * @return static|T
      */
     public function guard(string $guard): DispatchManager
     {
@@ -126,6 +131,49 @@ class DispatchManager
     }
 
     /**
+     * Dispatch worker for everyone online user
+     * @param ...$arguments
+     * @return bool
+     */
+    public function everyone(...$arguments): bool
+    {
+        $pullObject = new $this->class(...$arguments);
+
+        if ($pullObject instanceof Pull) {
+
+            foreach ($this->methods as $method) {
+
+                if (isset($method['name']) && isset($method['arguments'])) {
+
+                    $pullObject->{$method['name']}(...$method['arguments']);
+                }
+            }
+
+            foreach (\Puller::identifications() as $id) {
+
+                $guard = $this->guard ?: $pullObject->getGuard();
+
+                $hydratedObject = serialize($pullObject);
+
+                if (app()->runningInConsole()) {
+
+                    $manager = \Puller::newManager($guard, $id);
+
+                    $manager->setTabTask($hydratedObject);
+
+                } else {
+
+                    static::$queue[$guard][$id][] = $hydratedObject;
+                }
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Send workers queue
      * @return void
      */
@@ -145,7 +193,7 @@ class DispatchManager
      * Trap rof worker filling
      * @param $name
      * @param $arguments
-     * @return $this
+     * @return static|T
      */
     public function __call($name, $arguments)
     {

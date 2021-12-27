@@ -25,14 +25,19 @@ trait CacheManagerCheckTrait
 
     public function checkUser()
     {
-        if (!$this->isHasUser()) {
+        $list = $this->getUsers();
 
-            $list = $this->getUsers();
-
-            $list[$this->user_id] = $this->user_id;
-
-            \Cache::set($this->key_of_users(), $list);
+        if (!isset($list[$this->user_id])) {
+            $list[$this->user_id] = [
+                'id' => $this->user_id,
+                'created' => time(),
+                'touched' => time(),
+            ];
+        } else {
+            $list[$this->user_id]['touched'] = time();
         }
+
+        \Cache::set($this->key_of_users(), $list);
 
         return $this;
     }

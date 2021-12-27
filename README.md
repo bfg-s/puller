@@ -94,7 +94,7 @@ Submit the Puller worker:
 ```
 Further, in the browser, in the developer console, you will see the reaction.
 
-### Another example with the designer:
+### Another example with the designer
 `app/Pulls/SayHelloPull.php`
 ```php
 <?php
@@ -120,6 +120,101 @@ Submit the Puller worker:
 ```php
 \App\Pulls\MyTestPull::for(\Auth::user())
     ->dispatch('Administrator');
+```
+
+### Dispatch to everyone online user
+```php
+\App\Pulls\MyTestPull::everyone('Administrator');
+```
+With like:
+```php
+\App\Pulls\MyTestPull::new()->like('my-test')->everyone('Administrator');
+```
+
+### Livewire emit
+Anonymous dispatch:
+```php
+\Puller::for(Auth::user())
+    ->likeLivewire('livewire-event-name')
+    ->with('Hello world!')
+    ->dispatch();
+```
+Advanced dispatch:
+```php
+\App\Pulls\MyTestPull::for(\Auth::user())
+    ->likeLivewire('livewire-event-name')
+    ->dispatch();
+```
+
+### Alpine store method call
+Anonymous dispatch:
+```php
+\Puller::for(Auth::user())
+    ->likeAlpine('alpine-store-name', 'alpine-store-method-name')
+    ->with('Hello world!')
+    ->dispatch();
+```
+Advanced dispatch:
+```php
+\App\Pulls\MyTestPull::for(\Auth::user())
+    ->likeAlpine('alpine-store-name', 'alpine-store-method-name')
+    ->dispatch();
+```
+
+## Puller events
+
+### UserOnlineEvent
+An event that triggers if the user appeared online.
+```php
+Event::listen(\Bfg\Puller\Events\UserOnlineEvent::class, function (UserOnlineEvent $event) {
+    info("User $event->user_id online");
+});
+```
+
+### UserOfflineEvent
+The event that triggers in the case when the user is lost.
+```php
+Event::listen(\Bfg\Puller\Events\UserOfflineEvent::class, function (UserOfflineEvent $event) {
+    info("User $event->user_id offline");
+});
+```
+
+### TestListenNewTab
+An event that triggers in the case when the user opens a new tab.
+```php
+Event::listen(\Bfg\Puller\Events\UserNewTabEvent::class, function (UserNewTabEvent $event) {
+    info("User $event->user_id new tab $event->tab");
+});
+```
+
+### TestListenNewTab
+The event that triggers in the case when the user closes the tab.
+```php
+Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTabEvent $event) {
+    info("User $event->user_id close tab $event->tab");
+});
+```
+
+## Puller facade
+
+### Create new pull
+```php
+\Puller::new();
+```
+
+### Number of users online
+```php
+\Puller::online();
+```
+
+### List of users online
+```php
+\Puller::users();
+```
+
+### List of user identifiers online
+```php
+\Puller::identifications();
 ```
 
 ## Changelog
