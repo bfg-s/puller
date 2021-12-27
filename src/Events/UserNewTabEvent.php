@@ -17,7 +17,7 @@ class UserNewTabEvent
     public string $guard;
     public ?int $user_id;
     public ?string $tab;
-    protected bool $user_is_added;
+    public bool $user_is_added;
 
     /**
      * Create a new event instance.
