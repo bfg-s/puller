@@ -60,7 +60,7 @@ class PullerMessageMiddleware
         }
 
         if ($newTab) {
-            $this->manager->emitOnNewTabEvent();
+            $this->manager->emitOnNewTabEvent($online);
         }
 
         return $next($request);

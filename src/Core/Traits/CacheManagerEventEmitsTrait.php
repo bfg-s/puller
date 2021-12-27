@@ -9,9 +9,9 @@ use Bfg\Puller\Events\UserOfflineEvent;
 
 trait CacheManagerEventEmitsTrait
 {
-    public function emitOnNewTabEvent()
+    public function emitOnNewTabEvent(bool $user_is_added = false)
     {
-        event(new UserNewTabEvent($this->guard, $this->user_id, $this->tab));
+        event(new UserNewTabEvent($this->guard, $this->user_id, $this->tab, $user_is_added));
     }
 
     public function emitOnCloseTabEvent()
