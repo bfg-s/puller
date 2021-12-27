@@ -18,6 +18,7 @@ class Puller
      */
     public function new(string $guard = null)
     {
+        $guard = $guard ?: config('puller.guard');
         return Pull::guard($guard);
     }
 
