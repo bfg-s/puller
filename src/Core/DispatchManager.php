@@ -108,7 +108,7 @@ class DispatchManager
 
             $hydratedObject = serialize($pullObject);
 
-            if (app()->runningInConsole()) {
+            if (static::canDispatchImmediately()) {
 
                 $manager = \Puller::newManager($guard, $for_id);
 
@@ -155,7 +155,7 @@ class DispatchManager
 
                 $hydratedObject = serialize($pullObject);
 
-                if (app()->runningInConsole()) {
+                if (static::canDispatchImmediately()) {
 
                     $manager = \Puller::newManager($guard, $id);
 
@@ -200,5 +200,14 @@ class DispatchManager
         $this->methods[] = ['name' => $name, 'arguments' => $arguments];
 
         return $this;
+    }
+
+    /**
+     * Is can dispatch immediately
+     * @return bool
+     */
+    public static function canDispatchImmediately(): bool
+    {
+        return app()->runningInConsole() || request()->hasHeader('Puller-KeepAlive');
     }
 }

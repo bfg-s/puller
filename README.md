@@ -232,6 +232,17 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
 \Puller::identifications();
 ```
 
+## JavaScript
+You have a globally registered `Puller` object that is intended for external control.
+```javascript
+Puller.run(); // Run subscription.
+Puller.stop(); // Stop subscription.
+Puller.restart(); // Переподключить подписку, сделает остановку и запуск
+Puller.emit(name, detail); // Эмитация ответа на `Puller`
+Puller.emitLivewire(name, detail); // Эмитация ответа на `Puller` для `Livewire`
+Puller.emitAlpine(name, detail); // Эмитация ответа на `Puller` для `Alpine`
+```
+
 ## Changelog
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
 

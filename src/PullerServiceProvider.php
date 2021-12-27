@@ -25,7 +25,7 @@ class PullerServiceProvider extends ServiceProvider
         \Route::macro('puller', function (string $guard = null, bool $authorized = null) {
             $guard = $guard ?: config('puller.guard');
             $authorized = $authorized ?: config('puller.authorized');
-            \Route::get('/puller/message/{tab_hash}', PullerMessageController::class)
+            \Route::get('/puller/message', PullerMessageController::class)
                 ->middleware(['web', "puller:{$guard}," . ($authorized ? 'auth' : 'all')])
                 ->name('puller.message');
         });
@@ -65,15 +65,6 @@ class PullerServiceProvider extends ServiceProvider
 
         app(Shutdown::class)
             ->registerFunction([$this, 'writeCreatedJobs']);
-
-        //Header::queue('notification-warning', 'Your header got queued successfully!');
-
-        if (!request()->cookie('puller-session')) {
-            \Cookie::queue(
-                'puller-session',
-                md5(uniqid(time(), true))
-            );
-        }
     }
 
     public function writeCreatedJobs()

@@ -24,6 +24,11 @@ class PullerMessageMiddleware
      */
     public function handle($request, Closure $next, string $guard = "web", string $mode = "auth")
     {
+        if (!$request->hasHeader('Puller-KeepAlive')) {
+
+            abort(404);
+        }
+
         if (!$guard) $guard = "web";
 
         $authGuard = \Auth::guard($guard);
@@ -31,7 +36,7 @@ class PullerMessageMiddleware
         $this->manager = \Puller::newManager(
             $guard,
             ($authGuard->id() ?: 0),
-            $request->route('tab_hash')
+            $request->header('Puller-KeepAlive')
         );
 
         if ($mode == "auth" && $authGuard->guest()) {
@@ -44,15 +49,19 @@ class PullerMessageMiddleware
         app(Shutdown::class)
             ->registerFunction([$this, 'mishandle']);
 
-        if (!$this->manager->isHasUser()) {
-            $this->manager->emitOnUserOnlineEvent();
-        }
-        if (!$this->manager->isHasTab()) {
-            $this->manager->emitOnNewTabEvent();
-        }
+        $online = !$this->manager->isHasUser();
+        $newTab = !$this->manager->isHasTab();
 
         $this->manager->checkTab()
             ->checkUser();
+
+        if ($online) {
+            $this->manager->emitOnUserOnlineEvent();
+        }
+
+        if ($newTab) {
+            $this->manager->emitOnNewTabEvent();
+        }
 
         return $next($request);
     }

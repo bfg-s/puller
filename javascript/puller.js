@@ -6,10 +6,8 @@ let xhr = null;
 if (metaPrefix) {
     let newValue = metaPrefix.getAttribute('content');
     if (newValue) {
-        url = newValue + "/" + WEB_ID;
+        url = newValue;
     }
-} else {
-    url = url + "/" + WEB_ID;
 }
 
 window.onbeforeunload = function (event) {
@@ -18,15 +16,12 @@ window.onbeforeunload = function (event) {
 
 const makeRequest = (url) => {
     return new Promise(function (resolve, reject) {
-        // if (xhr) {
-        //     url = url + "?keepalive=true";
-        // }
         let keepalive = !!xhr;
         xhr = new XMLHttpRequest();
         xhr.open('GET', url);
         xhr.setRequestHeader("Content-Type", 'application/json');
         if (keepalive) {
-            xhr.setRequestHeader("Puller-Keepalive", WEB_ID);
+            xhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
         }
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
@@ -51,42 +46,12 @@ const makeRequest = (url) => {
 const subscribe = async () => {
     try {
         const result = await makeRequest(url);
-        const resultJson = JSON.parse(result);
-        if (resultJson && resultJson.results && Array.isArray(resultJson.results)) {
-            const results = resultJson.results;
-            results.map(cmd => {
-                if (cmd.name) {
-                    const livewire = /^livewire:(.*)/.exec(cmd.name);
-                    const alpine = /^alpine:([^.]+)\.?([^.]+)?$/.exec(cmd.name);
-                    if (livewire) {
-                        if (window.Livewire) {
-                            window.Livewire.emit(livewire[1], cmd.detail)
-                        } else {
-                            console.error("Livewire not found!");
-                        }
-                    } else if (alpine) {
-                        if (window.Alpine) {
-                            let data = Alpine.store(alpine[1]);
-                            let full_name = alpine[1];
-                            if (data) {
-                                data = data[alpine[2]];
-                                full_name += `.${alpine[2]}`;
-                            }
-                            if (data) {
-                                data(cmd.detail)
-                            } else {
-                                console.error(`Alpine store [${full_name}] method not found!`);
-                            }
-                        } else {
-                            console.error("Alpine not found!");
-                        }
-                    } else {
-                        document.dispatchEvent(new CustomEvent(cmd.name, {detail: cmd.detail}));
-                    }
-                }
-            });
+        try {
+            applyGlobalAnswer(result);
+            await subscribe();
+        } catch (e) {
+            console.error(e);
         }
-        await subscribe();
     } catch (e) {
         if (e.status !== 404) {
             setTimeout(() => {
@@ -96,19 +61,70 @@ const subscribe = async () => {
     }
 };
 
+const applyGlobalAnswer = (result) => {
+    const resultJson = JSON.parse(result);
+    if (resultJson && resultJson.results && Array.isArray(resultJson.results)) {
+        const results = resultJson.results;
+        results.map(applyAnswer);
+    }
+}
+
+const applyAnswer = (cmd) => {
+    if (cmd.name) {
+        const livewire = /^livewire:(.*)/.exec(cmd.name);
+        const alpine = /^alpine:([^.]+)\.?([^.]+)?$/.exec(cmd.name);
+        if (livewire) {
+            if (window.Livewire) {
+                window.Livewire.emit(livewire[1], cmd.detail)
+            } else {
+                console.error("Livewire not found!");
+            }
+        } else if (alpine) {
+            if (window.Alpine) {
+                if (alpine[2]) {
+                    if (typeof Alpine.store(alpine[1])[alpine[2]] === "function") {
+                        Alpine.store(alpine[1])[alpine[2]](cmd.detail);
+                    } else {
+                        Alpine.store(alpine[1])[alpine[2]] = cmd.detail;
+                    }
+                } else {
+                    if (typeof Alpine.store(alpine[1]) === "function") {
+                        Alpine.store(alpine[1])(cmd.detail);
+                    } else {
+                        Alpine.store(alpine[1], cmd.detail);
+                    }
+                }
+            } else {
+                console.error("Alpine not found!");
+            }
+        } else {
+            document.dispatchEvent(new CustomEvent(cmd.name, {detail: cmd.detail}));
+        }
+    }
+};
+
 window.Puller = {
-    start: () => {
+    run: () => {
         subscribe();
     },
     stop: () => {
         xhr.abort();
     },
     restart: () => {
-        xhr.abort();
-        subscribe();
+        window.Puller.stop();
+        window.Puller.run();
+    },
+    emit: (name, detail) => {
+        applyAnswer({name, detail})
+    },
+    emitLivewire: (name, detail) => {
+        applyAnswer({name: `livewire:${name}`, detail})
+    },
+    emitAlpine: (name, detail) => {
+        applyAnswer({name: `alpine:${name}`, detail})
     },
 };
 
 require('./listeners');
 
-subscribe();
+window.Puller.run();
