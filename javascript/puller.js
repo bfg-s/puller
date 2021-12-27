@@ -16,13 +16,10 @@ window.onbeforeunload = function (event) {
 
 const makeRequest = (url) => {
     return new Promise(function (resolve, reject) {
-        let keepalive = !!xhr;
         xhr = new XMLHttpRequest();
         xhr.open('GET', url);
         xhr.setRequestHeader("Content-Type", 'application/json');
-        if (keepalive) {
-            xhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
-        }
+        xhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(xhr.response);
