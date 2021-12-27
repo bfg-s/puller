@@ -49,6 +49,10 @@ document.addEventListener('my_test', function ({detail}) {
 Further, in the browser, in the developer console, you will see the reaction.
 
 ## Advanced puller
+> If you want the main processing and data from receiving data 
+> on the side of the task recipient, you must use that advanced `Pullers`, 
+> since the `handle` method is always performed on the recipient side.
+
 Generate worker:
 ```cli
 php artisan make:pull MyTestPull
