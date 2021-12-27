@@ -2,6 +2,8 @@
 
 namespace Bfg\Puller\Commands;
 
+use Bfg\Puller\Interfaces\PullLikeAlpineInterface;
+use Bfg\Puller\Interfaces\PullLikeLivewireInterface;
 use Illuminate\Console\Concerns\CreatesMatchingTest;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
@@ -84,6 +86,50 @@ class PullMakeCommand extends GeneratorCommand
     }
 
     /**
+     * Build the class with the given name.
+     *
+     * @param  string  $name
+     * @return string
+     *
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     */
+    protected function buildClass($name)
+    {
+        $stub = $this->files->get($this->getStub());
+
+        return $this->replaceNamespace($stub, $name)
+            ->replaceImplements($stub)
+            ->replaceClass($stub, $name);
+    }
+
+    /**
+     * Replace the implements and uses for the given stub.
+     *
+     * @param  string  $stub
+     * @return $this
+     */
+    protected function replaceImplements(&$stub)
+    {
+        $uses = "";
+        $implements = "";
+        if ($this->option('livewire')) {
+            $uses = "\nuse " . PullLikeLivewireInterface::class . ";";
+            $implements = " implements PullLikeLivewireInterface";
+        } else if ($this->option('alpine')) {
+            $uses = "\nuse " . PullLikeAlpineInterface::class . ";";
+            $implements = " implements PullLikeAlpineInterface";
+        }
+
+        $stub = str_replace(
+            ['{{ uses }}', '{{ implements }}'],
+            [$uses, $implements],
+            $stub
+        );
+
+        return $this;
+    }
+
+    /**
      * Get the console command options.
      *
      * @return array
@@ -91,6 +137,8 @@ class PullMakeCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
+            ['livewire', null, InputOption::VALUE_NONE, 'Create the Livewire puller'],
+            ['alpine', null, InputOption::VALUE_NONE, 'Create the Alpine puller'],
             ['force', null, InputOption::VALUE_NONE, 'Create the class even if the model already exists'],
         ];
     }

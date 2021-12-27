@@ -57,7 +57,7 @@ const subscribe = async () => {
             results.map(cmd => {
                 if (cmd.name) {
                     const livewire = /^livewire:(.*)/.exec(cmd.name);
-                    const alpine = /^alpine:([^\.]+).([^\.]+)$/.exec(cmd.name);
+                    const alpine = /^alpine:([^.]+)\.?([^.]+)?$/.exec(cmd.name);
                     if (livewire) {
                         if (window.Livewire) {
                             window.Livewire.emit(livewire[1], cmd.detail)
@@ -66,12 +66,19 @@ const subscribe = async () => {
                         }
                     } else if (alpine) {
                         if (window.Alpine) {
-                            let data = Alpine.store(alpine[1])[alpine[2]];
+                            let data = Alpine.store(alpine[1]);
+                            let full_name = alpine[1];
+                            if (data) {
+                                data = data[alpine[2]];
+                                full_name += `.${alpine[2]}`;
+                            }
                             if (data) {
                                 data(cmd.detail)
+                            } else {
+                                console.error(`Alpine store [${full_name}] method not found!`);
                             }
                         } else {
-                            console.error("Livewire not found!");
+                            console.error("Alpine not found!");
                         }
                     } else {
                         document.dispatchEvent(new CustomEvent(cmd.name, {detail: cmd.detail}));

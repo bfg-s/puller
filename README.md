@@ -34,7 +34,7 @@ php artisan vendor:publish --tag=puller-assets
 ```
 3. Prepare your own document event listener:
 ```javascript
-document.addEventListener('my-test', function ({detail}) {
+document.addEventListener('my_test', function ({detail}) {
     console.log(detail);
 });
 ```
@@ -42,7 +42,7 @@ document.addEventListener('my-test', function ({detail}) {
 ```php
 \Puller::new()
     ->for(Auth::user())
-    ->like('my-test')
+    ->like('my_test')
     ->with('Hello world!')
     ->dispatch();
 ```
@@ -80,12 +80,12 @@ automatically or you can specify the `protected ?string $name = "my_name";` prop
 ```
 Prepare your own document event listener:
 ```javascript
-document.addEventListener('my-test-pull', function ({detail}) { // 
+document.addEventListener('my_test_pull', function ({detail}) { // 
     console.log(detail);
 });
 ```
 > The name of the class-based event will be generated in 
-> `Snake-Case`, `MyTestPull` will turn into a `my-test-pull`.
+> `snake_case`, `MyTestPull` will turn into a `my_test_pull`.
 
 Submit the Puller worker:
 ```php
@@ -128,38 +128,53 @@ Submit the Puller worker:
 ```
 With like:
 ```php
-\App\Pulls\MyTestPull::new()->like('my-test')->everyone('Administrator');
+\App\Pulls\MyTestPull::new()->like('my_test')->everyone('Administrator');
 ```
 
 ### Livewire emit
 Anonymous dispatch:
 ```php
 \Puller::for(Auth::user())
-    ->likeLivewire('livewire-event-name')
+    ->likeLivewire('livewire_event_name')
     ->with('Hello world!')
     ->dispatch();
 ```
 Advanced dispatch:
 ```php
 \App\Pulls\MyTestPull::for(\Auth::user())
-    ->likeLivewire('livewire-event-name')
+    ->likeLivewire('livewire_event_name')
     ->dispatch();
+```
+Create default puller for Livewire
+```cli
+php artisan make:pull MyTestPull --livewire
 ```
 
 ### Alpine store method call
 Anonymous dispatch:
 ```php
 \Puller::for(Auth::user())
-    ->likeAlpine('alpine-store-name', 'alpine-store-method-name')
+    ->likeAlpine('alpine_store.method_name')
     ->with('Hello world!')
+    ->dispatch();
+
+// Or
+
+\Puller::for(Auth::user())
+    ->likeAlpine('darkMode.toggle')
     ->dispatch();
 ```
 Advanced dispatch:
 ```php
 \App\Pulls\MyTestPull::for(\Auth::user())
-    ->likeAlpine('alpine-store-name', 'alpine-store-method-name')
+    ->likeAlpine('alpine_store.method_name')
     ->dispatch();
 ```
+Create default puller for Alpine
+```cli
+php artisan make:pull DarkMode_Toggle --alpine
+```
+> Well be generated `dark_mode.toggle` name
 
 ## Puller events
 
@@ -219,11 +234,6 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
 
 ## Changelog
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
-
-## Credits
-
-- [BFG](https://github.com/bfg-s)
-- [All Contributors](https://github.com/bfg-s/puller/contributors)
 
 ## Security
 If you discover any security-related issues, please email xsaven@gmail.com instead of using the issue tracker.

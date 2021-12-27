@@ -3,6 +3,8 @@
 namespace Bfg\Puller;
 
 use Bfg\Puller\Core\Traits\PullDispatch;
+use Bfg\Puller\Interfaces\PullLikeAlpineInterface;
+use Bfg\Puller\Interfaces\PullLikeLivewireInterface;
 
 class Pull
 {
@@ -25,9 +27,14 @@ class Pull
     public function getName()
     {
         if ($this->name) {
+            if ($this instanceof PullLikeLivewireInterface) {
+                $this->likeLivewire($this->name);
+            } else if ($this instanceof PullLikeAlpineInterface) {
+                $this->likeAlpine($this->name);
+            }
             return $this->name;
         }
-        return \Str::snake(class_basename(static::class), '-');
+        return str_replace("._", ".", \Str::snake(str_replace('_', '.', class_basename(static::class))));
     }
 
     public function getGuard()
@@ -55,9 +62,9 @@ class Pull
         return $this;
     }
 
-    public function likeAlpine(string $store, string $storeMethod)
+    public function likeAlpine(string $name)
     {
-        $this->name = "alpine:" . $store . "." . $storeMethod;
+        $this->name = "alpine:" . $name;
 
         return $this;
     }
