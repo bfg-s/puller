@@ -28,7 +28,7 @@ class CacheManager
         int $user_id = 0,
         string $tab = null
     ) {
-        $this->tab = $tab;
+        $this->tab = $tab ?? request()->header('Puller-KeepAlive');
         $this->guard = $guard;
         $this->user_id = $user_id;
     }

@@ -59,7 +59,8 @@ const subscribe = async () => {
 };
 
 const applyGlobalAnswer = (result) => {
-    const resultJson = JSON.parse(result);
+    result = String(result).trim();
+    const resultJson = result ? JSON.parse(result) : null;
     if (resultJson && resultJson.results && Array.isArray(resultJson.results)) {
         const results = resultJson.results;
         results.map(applyAnswer);
@@ -122,6 +123,5 @@ window.Puller = {
     },
 };
 
-require('./listeners');
 
 window.Puller.run();
