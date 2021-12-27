@@ -44,7 +44,7 @@ class Pull
 
     public function getForId()
     {
-        return $this->for_id === null ? $this->for_id : \Auth::id();
+        return $this->for_id !== null ? $this->for_id : \Auth::id();
     }
 
 
