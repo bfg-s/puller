@@ -29,13 +29,13 @@ trait CacheManagerGettersTrait
 
             $tabs = [];
 
-            foreach ($keys as $key) {
+            foreach ($keys ?: [] as $key) {
                 $tabs[] = preg_replace('/.*:([^:]+)$/', '$1', $key);
             }
 
             return array_combine($tabs, $this->redis()->mGet(
                 $keys
-            ));
+            ) ?: []);
         }
         return \Cache::get($this->key_of_tabs(), []);
     }
@@ -73,7 +73,7 @@ trait CacheManagerGettersTrait
                 $ids[] = (int)preg_replace('/.*:([^:]+)$/', '$1', $key);
             }
 
-            return array_combine($ids, $this->redis()->mGet(
+            return array_combine($ids ?: [], $this->redis()->mGet(
                 $keys
             ) ?: []);
         }
