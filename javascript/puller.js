@@ -61,7 +61,6 @@ const subscribe = async () => {
 
 const applyGlobalAnswer = (result) => {
     result = String(result).trim();
-    console.log(">>", result);
     const resultJson = result ? JSON.parse(result) : null;
     if (resultJson && resultJson.results && Array.isArray(resultJson.results)) {
         const results = resultJson.results;
