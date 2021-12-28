@@ -83,53 +83,6 @@ class DispatchManager
         return $this;
     }
 
-    public function flush(...$arguments)
-    {
-        $pullObject = new $this->class(...$arguments);
-
-        if ($pullObject instanceof Pull && config('cache.default') == 'redis') {
-
-            foreach ($this->methods as $method) {
-
-                if (isset($method['name']) && isset($method['arguments'])) {
-
-                    $pullObject->{$method['name']}(...$method['arguments']);
-                }
-            }
-
-            $guard = $this->guard ?: $pullObject->getGuard();
-
-            $for_id = $this->for_id !== null ? $this->for_id
-                : ($pullObject->getForId() !== null ? $pullObject->getForId() : 0);
-
-            $hydratedObject = serialize($pullObject);
-
-            if (static::canDispatchImmediately()) {
-
-                $manager = \Puller::newManager($guard, $for_id);
-
-                if ($manager->isHasUser()) {
-
-                    //$manager->setTabTask($hydratedObject);
-
-                    foreach ($manager->getTabs() as $tab => $info) {
-                        Redis::publish($tab . "." . uniqid(time()), $hydratedObject);
-                    }
-
-                    return true;
-                }
-
-            } else {
-
-                static::$queue[$guard][$for_id][] = $hydratedObject;
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * Dispatch worker
      * @param ...$arguments

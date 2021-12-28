@@ -296,6 +296,25 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
 ```
 
 ## Model watching
+You can use helpers for listeners of model events.
+```php
+\App\Pulls\MyTestPull::modelWatch( 
+    \App\Modeld\Message::class,
+    $events = [] // 'updated', 'created', 'deleted' by default
+);
+\App\Pulls\MyTestPull::modelWatchForEveryone(
+    \App\Modeld\Message::class,
+    $events = [] // 'updated', 'created', 'deleted' by default
+);
+\App\Pulls\MyTestPull::reportToOwner(
+    \App\Modeld\Message::class,
+    $owner_field = "user_id",
+    $events = [] // 'updated', 'created', 'deleted' by default
+);
+```
+> The report will be sent to the user the identifier of which is 
+> called in this column that you indicated in the property `$owner_field` 
+> (may be an array with a list of several columns).
 
 ## JavaScript
 You have a globally registered `Puller` object that is intended for external control.
