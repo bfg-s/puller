@@ -26,8 +26,10 @@ trait CacheManagerSettersTrait
                 $oldTab = $this->tab;
                 foreach ($tasks as $k=>$task) {
                     foreach ($this->getTabs() as $tab => $time) {
-                        $this->tab = $tab;
-                        $mSet[$this->redis_key_user_task(uniqid($time.'.'.time().'.'.$k.'.'))] = $task;
+                        if ($time >= (time()-2)) {
+                            $this->tab = $tab;
+                            $mSet[$this->redis_key_user_task(uniqid($time.'.'.time().'.'.$k.'.'))] = $task;
+                        }
                     }
                 }
                 $this->tab = $oldTab;
@@ -51,12 +53,18 @@ trait CacheManagerSettersTrait
         return false;
     }
 
-    public function tabTouch(int $addSeconds = 0)
+    public function tabTouch()
     {
-        if (!PullerMessageMiddleware::$isRedis && $this->tab) {
+        if (PullerMessageMiddleware::$isRedis && $this->tab) {
+
+            $this->redis()->set(
+                $this->redis_key_user_tab($this->tab), time()
+            );
+
+        } else if ($this->tab) {
             $list = $this->getTabs();
             if (isset($list[$this->tab])) {
-                $list[$this->tab]['touched'] = time()+$addSeconds;
+                $list[$this->tab]['touched'] = time();
                 \Cache::set($this->key_of_tabs(), $list);
             }
         }
