@@ -6,6 +6,8 @@ use Bfg\Puller\Core\CacheManager;
 
 class Puller
 {
+    protected $online_users = [];
+
     /**
      * Instance of cache manager
      * @var CacheManager|null
@@ -61,7 +63,16 @@ class Puller
 
     public function users()
     {
-        return $this->manager()->getUsers();
+        if (!$this->online_users) {
+            $this->online_users = $this->manager()->getUsers();
+        }
+
+        return $this->online_users;
+    }
+
+    public function isOnlineUser(int $user_id)
+    {
+        return isset($this->users()[$user_id]);
     }
 
     public function identifications()
@@ -76,5 +87,25 @@ class Puller
     public function online()
     {
         return count($this->users());
+    }
+
+    public function onOnline(callable $callable)
+    {
+        \Event::listen(\Bfg\Puller\Events\UserOnlineEvent::class, $callable);
+    }
+
+    public function onOffline(callable $callable)
+    {
+        \Event::listen(\Bfg\Puller\Events\UserOfflineEvent::class, $callable);
+    }
+
+    public function onNewTab(callable $callable)
+    {
+        \Event::listen(\Bfg\Puller\Events\UserNewTabEvent::class, $callable);
+    }
+
+    public function onCloseTab(callable $callable)
+    {
+        \Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, $callable);
     }
 }

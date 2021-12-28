@@ -8,6 +8,8 @@ use Closure;
 
 class PullerMessageMiddleware
 {
+    static bool $isRedis = false;
+
     /**
      * @var CacheManager
      */
@@ -29,6 +31,8 @@ class PullerMessageMiddleware
             abort(404);
         }
 
+        header('Cache-Control: no-cache');
+
         if (!$guard) $guard = "web";
 
         $authGuard = \Auth::guard($guard);
@@ -47,7 +51,7 @@ class PullerMessageMiddleware
         set_time_limit(config('puller.waiting', 30));
 
         app(Shutdown::class)
-            ->registerFunction([$this, 'mishandle']);
+            ->registerFunction([$this, 'mishandle'], 'disconnect');
 
         $online = !$this->manager->isHasUser();
         $newTab = !$this->manager->isHasTab();
@@ -63,7 +67,11 @@ class PullerMessageMiddleware
             $this->manager->emitOnNewTabEvent($online);
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        //$response->header('Keep-Alive', 'timeout=5, max=1000');
+
+        return $response;
     }
 
     /**

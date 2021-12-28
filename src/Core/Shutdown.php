@@ -23,6 +23,11 @@ class Shutdown {
         }
     }
 
+    public function keys()
+    {
+        return array_keys($this->functions);
+    }
+
     public function clear() {
         $this->functions = [];
     }
@@ -39,7 +44,16 @@ class Shutdown {
         return $this->enabled;
     }
 
-    public function registerFunction(callable $fnc) {
-        $this->functions[] = $fnc;
+    public function forgetFunction(string $name)
+    {
+        unset($this->functions[$name]);
+    }
+
+    public function registerFunction(callable $fnc, string $name = null) {
+        if ($name) {
+            $this->functions[$name] = $fnc;
+        } else {
+            $this->functions[] = $fnc;
+        }
     }
 }

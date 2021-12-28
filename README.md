@@ -18,6 +18,18 @@ tabs and send commands to all the user tabs at all,
 to all browsers. So, we have an excellent opportunity to 
 follow the online meter and a real-time list of users.
 
+## Redis
+Be careful, the package uses the default caching system by default, 
+with the driver that is listed there, but if you switch the caching 
+driver to `redis`, then you will feel a significant increase in speed 
+and get a better and accurate task distribution system and online.
+```dotenv
+...
+CACHE_DRIVER=redis
+...
+```
+> To do this, you should have the extension `Redis` for `php`.
+
 ## Usage
 In order to start using, you need to make a couple of simple things:
 
@@ -149,9 +161,24 @@ Advanced dispatch:
     ->likeLivewire('livewire_event_name')
     ->dispatch();
 ```
-Create default puller for Livewire
+Create default puller for Livewire:
 ```cli
 php artisan make:pull MyTestPull --livewire
+```
+In Livewire component make event:
+```php
+class OrderTracker extends Component
+{
+    public $showNewOrderNotification = false;
+ 
+    // Special Syntax: ['puller:{event}' => '{method}']
+    protected $listeners = ['puller:livewire_event_name' => 'notifyNewOrder'];
+ 
+    public function notifyNewOrder()
+    {
+        $this->showNewOrderNotification = true;
+    }
+}
 ```
 
 ### Alpine store method call
@@ -174,11 +201,27 @@ Advanced dispatch:
     ->likeAlpine('alpine_store.method_name')
     ->dispatch();
 ```
-Create default puller for Alpine
+Create default puller for Alpine:
 ```cli
 php artisan make:pull DarkMode_Toggle --alpine
 ```
 > Well be generated `dark_mode.toggle` name
+
+Alpine store:
+```javascript
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('dark_mode', {
+            status: true,
+
+            toggle() { // <-- details
+                this.status = !this.status;
+            }
+        })
+    })
+</script>
+```
+> Details come to the function, or if this property will be assigned to it.
 
 ## Puller events
 
@@ -205,6 +248,7 @@ Event::listen(\Bfg\Puller\Events\UserNewTabEvent::class, function (UserNewTabEve
     info("User $event->user_id new tab $event->tab");
 });
 ```
+> Attention! If you reboot a tab, offline and online events will not work, since in fact you stay online if you need an event for each page load, understand that every time you restart the page it is believed that you create a new tab.
 
 ### TestListenNewTab
 The event that triggers in the case when the user closes the tab.
@@ -231,10 +275,27 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
 \Puller::users();
 ```
 
+### Is online user
+```php
+\Puller::isOnlineUser(int $user_id);
+```
+
 ### List of user identifiers online
 ```php
 \Puller::identifications();
 ```
+
+### Short Event listener setters
+```php
+\Puller::onOnline(function (UserOnlineEvent $event) {
+    info("User $event->user_id online");
+});
+\Puller::onOffline(callable);
+\Puller::onNewTab(callable);
+\Puller::onCloseTab(callable);
+```
+
+## Model watching
 
 ## JavaScript
 You have a globally registered `Puller` object that is intended for external control.

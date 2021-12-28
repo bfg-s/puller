@@ -18,6 +18,8 @@ class PullerServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        PullerMessageMiddleware::$isRedis = config('cache.default') == 'redis';
+
         $this->mergeConfigFrom(__DIR__ . '/../config/puller.php', 'puller');
 
         \Route::aliasMiddleware('puller', PullerMessageMiddleware::class);

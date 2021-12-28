@@ -2,13 +2,14 @@
 
 namespace Bfg\Puller;
 
-use Bfg\Puller\Core\Traits\PullDispatch;
+use Bfg\Puller\Core\Traits\ModelWatchTrait;
+use Bfg\Puller\Core\Traits\PullDispatchTrait;
 use Bfg\Puller\Interfaces\PullLikeAlpineInterface;
 use Bfg\Puller\Interfaces\PullLikeLivewireInterface;
 
 class Pull
 {
-    use PullDispatch;
+    use PullDispatchTrait, ModelWatchTrait;
 
     protected ?string $guard = null;
 
@@ -16,12 +17,16 @@ class Pull
 
     protected ?int $for_id = null;
 
-    protected $default_handle_data = null;
+    protected $handle_data = null;
 
+    public function access()
+    {
+        return true;
+    }
 
     public function handle() {
 
-        return $this->default_handle_data;
+        return $this->handle_data;
     }
 
     public function getName()
@@ -71,7 +76,7 @@ class Pull
 
     public function with($handle)
     {
-        $this->default_handle_data = $handle;
+        $this->handle_data = $handle;
 
         return $this;
     }

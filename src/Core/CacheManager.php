@@ -7,11 +7,13 @@ use Bfg\Puller\Core\Traits\CacheManagerCleanerTrait;
 use Bfg\Puller\Core\Traits\CacheManagerConditionTrait;
 use Bfg\Puller\Core\Traits\CacheManagerEventEmitsTrait;
 use Bfg\Puller\Core\Traits\CacheManagerGettersTrait;
+use Bfg\Puller\Core\Traits\CacheManagerRedisTrait;
 use Bfg\Puller\Core\Traits\CacheManagerSettersTrait;
 
 class CacheManager
 {
-    use CacheManagerGettersTrait,
+    use CacheManagerRedisTrait,
+        CacheManagerGettersTrait,
         CacheManagerConditionTrait,
         CacheManagerCheckTrait,
         CacheManagerCleanerTrait,

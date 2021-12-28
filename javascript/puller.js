@@ -19,6 +19,7 @@ const makeRequest = (url) => {
         xhr = new XMLHttpRequest();
         xhr.open('GET', url);
         xhr.setRequestHeader("Content-Type", 'application/json');
+        xhr.setRequestHeader("Cache-Control", "no-cache");
         xhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
@@ -60,6 +61,7 @@ const subscribe = async () => {
 
 const applyGlobalAnswer = (result) => {
     result = String(result).trim();
+    console.log(">>", result);
     const resultJson = result ? JSON.parse(result) : null;
     if (resultJson && resultJson.results && Array.isArray(resultJson.results)) {
         const results = resultJson.results;
@@ -73,7 +75,7 @@ const applyAnswer = (cmd) => {
         const alpine = /^alpine:([^.]+)\.?([^.]+)?$/.exec(cmd.name);
         if (livewire) {
             if (window.Livewire) {
-                window.Livewire.emit(livewire[1], cmd.detail)
+                window.Livewire.emit(`puller:${livewire[1]}`, cmd.detail)
             } else {
                 console.error("Livewire not found!");
             }

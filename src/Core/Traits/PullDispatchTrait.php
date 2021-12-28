@@ -5,7 +5,7 @@ namespace Bfg\Puller\Core\Traits;
 use Bfg\Puller\Core\DispatchManager;
 use Illuminate\Database\Eloquent\Model;
 
-trait PullDispatch
+trait PullDispatchTrait
 {
     /**
      * @param  string  $guard

@@ -2,8 +2,17 @@
 
 namespace Bfg\Puller\Core\Traits;
 
+use Bfg\Puller\Middlewares\PullerMessageMiddleware;
+
 trait CacheManagerSettersTrait
 {
+    public function setTab(string $tab)
+    {
+        $this->tab = $tab;
+
+        return $this;
+    }
+
     public function setTabTask($tasks)
     {
         if (is_string($tasks)) {
@@ -12,15 +21,29 @@ trait CacheManagerSettersTrait
 
         if (is_array($tasks)) {
 
-            $list = $this->getTabs();
+            if (PullerMessageMiddleware::$isRedis) {
+                $mSet = [];
+                $oldTab = $this->tab;
+                foreach ($tasks as $k=>$task) {
+                    foreach ($this->getTabs() as $tab => $time) {
+                        $this->tab = $tab;
+                        $mSet[$this->redis_key_user_task(uniqid($time.'.'.time().'.'.$k.'.'))] = $task;
+                    }
+                }
+                $this->tab = $oldTab;
+                $this->redis()->mset($mSet);
+                //dump($mSet);
+            } else {
+                $list = $this->getTabs();
 
-            foreach ($list as $tab => $item) {
-                $list[$tab]['tasks'] = array_merge(
-                    $item['tasks'], $tasks
-                );
+                foreach ($list as $tab => $item) {
+                    $list[$tab]['tasks'] = array_merge(
+                        $item['tasks'], $tasks
+                    );
+                }
+
+                \Cache::set($this->key_of_tabs(), $list);
             }
-
-            \Cache::set($this->key_of_tabs(), $list);
 
             return true;
         }
@@ -28,12 +51,12 @@ trait CacheManagerSettersTrait
         return false;
     }
 
-    public function tabTouch()
+    public function tabTouch(int $addSeconds = 0)
     {
-        if ($this->tab) {
+        if (!PullerMessageMiddleware::$isRedis && $this->tab) {
             $list = $this->getTabs();
             if (isset($list[$this->tab])) {
-                $list[$this->tab]['touched'] = time();
+                $list[$this->tab]['touched'] = time()+$addSeconds;
                 \Cache::set($this->key_of_tabs(), $list);
             }
         }
@@ -41,21 +64,12 @@ trait CacheManagerSettersTrait
 
     public function tabTouchCreated()
     {
-        if ($this->tab) {
+        if (!PullerMessageMiddleware::$isRedis && $this->tab) {
             $list = $this->getTabs();
             if (isset($list[$this->tab])) {
                 $list[$this->tab]['created'] = time();
                 \Cache::set($this->key_of_tabs(), $list);
             }
         }
-    }
-
-    public function hasAccessToTab(string $tab)
-    {
-        return $this->lockTab($tab)->get();
-    }
-    public function lockTab(string $tab)
-    {
-        return \Cache::lock("puller:tabs:{$this->guard}:{$tab}:lock", 5);
     }
 }
