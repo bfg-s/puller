@@ -10,7 +10,7 @@ trait ModelWatchTrait
         bool $everyone = false
     ) {
         foreach (static::getDefaultObserverEvents((array)$events) as $event) {
-            $modelClass::$$event(function ($model) use ($event, $everyone) {
+            call_user_func([$modelClass, $event], function ($model) use ($event, $everyone) {
                 static::new()->{$everyone ? 'everyone' : 'dispatch'}($model, $event);
             });
         }
@@ -30,7 +30,7 @@ trait ModelWatchTrait
         bool $everyone = false
     ) {
         foreach (static::getDefaultObserverEvents((array)$events) as $event) {
-            $modelClass::$$event(function ($model) use ($event, $owner_field, $everyone) {
+            call_user_func([$modelClass, $event], function ($model) use ($event, $owner_field, $everyone) {
                 foreach ((array)$owner_field as $field) {
                     if ($model->{$field}) {
                         static::new()->for($model->{$field})->{$everyone ? 'everyone' : 'dispatch'}($model, $event);
