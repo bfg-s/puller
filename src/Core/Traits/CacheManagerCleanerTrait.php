@@ -76,8 +76,16 @@ trait CacheManagerCleanerTrait
 
     public function removeOverdueTab()
     {
-        if (!PullerMessageMiddleware::$isRedis) {
+        if (PullerMessageMiddleware::$isRedis) {
 
+            $mDel = [];
+            foreach ($this->getTabs() as $tab => $time) {
+                if ($time < (time()-2)) {
+                    $mDel[] = $this->redis_key_user_tab($tab);
+                }
+            }
+            $this->redis()->del($mDel);
+        } else {
             $list = [];
             foreach ($this->getTabs() as $tab => $item) {
                 if ($item['touched'] > (time()-2)) {

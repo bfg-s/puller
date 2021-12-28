@@ -24,8 +24,8 @@ trait CacheManagerSettersTrait
             if (PullerMessageMiddleware::$isRedis) {
                 $mSet = [];
                 $oldTab = $this->tab;
-                foreach ($tasks as $k=>$task) {
-                    foreach ($this->getTabs() as $tab => $time) {
+                foreach ($this->getTabs() as $tab => $time) {
+                    foreach ($tasks as $k=>$task) {
                         if ($time >= (time()-2)) {
                             $this->tab = $tab;
                             $mSet[$this->redis_key_user_task(uniqid($time.'.'.time().'.'.$k.'.'))] = $task;
@@ -34,7 +34,6 @@ trait CacheManagerSettersTrait
                 }
                 $this->tab = $oldTab;
                 $this->redis()->mset($mSet);
-                //dump($mSet);
             } else {
                 $list = $this->getTabs();
 
