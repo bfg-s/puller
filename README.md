@@ -223,6 +223,20 @@ Alpine store:
 ```
 > Details come to the function, or if this property will be assigned to it.
 
+Alpine blade directive:
+```blade
+@alpineStore('test', ['state' => true], true)
+@alpineStores([
+    'chat' => ['list' => []],
+    'online' => ['count' => 0],
+], true)
+```
+Generated:
+```html
+<script type='text/javascript'>document.addEventListener('alpine:init', function () {Alpine.store("test", {"state":true});})</script>
+<script type='text/javascript'>document.addEventListener('alpine:init', function () {Alpine.store("chat", {"list":[]});Alpine.store("online", {"count":0});})</script>
+```
+
 ## Puller events
 
 ### UserOnlineEvent

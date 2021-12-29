@@ -4,6 +4,7 @@ namespace Bfg\Puller;
 
 use Bfg\Puller\Commands\PullMakeCommand;
 use Bfg\Puller\Controllers\PullerMessageController;
+use Bfg\Puller\Core\BladeDirectiveAlpineStore;
 use Bfg\Puller\Core\DispatchManager;
 use Bfg\Puller\Core\Shutdown;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
@@ -52,6 +53,9 @@ class PullerServiceProvider extends ServiceProvider
     public function boot()
     {
         \Route::puller();
+
+        \Blade::directive('alpineStore', [BladeDirectiveAlpineStore::class, 'directive']);
+        \Blade::directive('alpineStores', [BladeDirectiveAlpineStore::class, 'manyDirective']);
 
         $this->publishes([
             __DIR__ . '/../config/puller.php' => config_path('puller.php')
