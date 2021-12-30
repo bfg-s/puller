@@ -19,9 +19,37 @@ class Pull
 
     protected $handle_data = null;
 
+    protected $query = [];
+
+    protected $delay = 0;
+
+    public function getDelay()
+    {
+        return $this->delay;
+    }
+
+    public function delay(int $delaySeconds)
+    {
+        $this->delay = $delaySeconds;
+
+        return $this;
+    }
+
+    public function query(array $query = [])
+    {
+        $this->query = $query;
+
+        return $this;
+    }
+
     public function access()
     {
         return true;
+    }
+
+    public function getQuery()
+    {
+        return $this->query;
     }
 
     public function handle() {
@@ -62,14 +90,14 @@ class Pull
 
     public function likeLivewire(string $name)
     {
-        $this->name = "livewire:" . $name;
+        $this->name = "livewire::" . $name;
 
         return $this;
     }
 
     public function likeAlpine(string $name)
     {
-        $this->name = "alpine:" . $name;
+        $this->name = "alpine::" . $name;
 
         return $this;
     }

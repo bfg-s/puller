@@ -2,72 +2,46 @@
 
 namespace Bfg\Puller\Controllers;
 
-use Bfg\Puller\Pull;
+use Bfg\Puller\Middlewares\PullerMessageMiddleware;
 use Illuminate\Http\Request;
 
 class PullerMessageController
 {
-    public function __invoke(Request $request)
+    /**
+     * @throws \ReflectionException
+     */
+    public function __invoke($name, Request $request)
     {
-        while (ob_get_level()){
-            ob_get_contents();
-            ob_end_clean();
+        $guard = PullerMessageMiddleware::$guard;
+        $events = app('events');
+        $property = new \ReflectionProperty($events, "listeners");
+        $property->setAccessible(true);
+        $eventList = array_keys(
+            $property->getValue($events)
+        );
+        $eventPattern = "*\\" . \Str::of($name)
+            ->prepend($guard, 'Message', \Str::contains($name, ":") ? '-' : ':')
+            ->append("Event")
+            ->camel()
+            ->explode(':')
+            ->map(function ($i) { return ucfirst($i); })
+            ->join('\\');
+
+        $results = [];
+
+        foreach ($eventList as $eventClass) {
+            if (\Str::is($eventPattern, $eventClass)) {
+                $results = array_merge($this->callEvent($eventClass, $request));
+            }
         }
 
-        $seconds = 0;
-        $manager = \Puller::manager();
-
-        $manager->removeOverdueTab();
-        $manager->tabTouchCreated();
-
-        while (true) {
-
-            if (!$manager->isHasTab()) {
-                break;
-            }
-
-            $manager->tabTouch();
-
-            if ($manager->isTaskExists()) {
-                $objects = $manager->getTab();
-                $results = $this->applyTasks($objects['tasks']);
-                $manager->clearTab();
-                if ($results) {
-                    return ['results' => $results];
-                }
-            }
-            else {
-                echo str_pad('',1024)."\n";
-                flush();
-            }
-
-            $manager->removeOverdueTab();
-
-            $seconds++;
-            sleep(1);
-        }
-
-        echo str_pad('',4096)."\n";
-        flush();
+        return array_filter($results);
     }
 
-    protected function applyTasks(array $tasks)
+    protected function callEvent(string $class, Request $request)
     {
-        $results = [];
-        foreach ($tasks as $task) {
-            try {
-                $taskObject = unserialize($task);
-                if ($taskObject instanceof Pull) {
-                    $handleResult = $taskObject->handle();
-                    if ($taskObject->access()) {
-                        $name = $taskObject->getName() ?? 'pull';
-                        $results[] = ['name' => $name, 'detail' => $handleResult];
-                    }
-                }
-            } catch (\Throwable $throwable) {
-                \Log::error($throwable);
-            }
-        }
-        return $results;
+        return event(
+            app($class, $request->all())
+        );
     }
 }

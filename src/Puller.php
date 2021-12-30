@@ -3,6 +3,8 @@
 namespace Bfg\Puller;
 
 use Bfg\Puller\Core\CacheManager;
+use Bfg\Puller\Middlewares\PullerMessageMiddleware;
+use Carbon\Carbon;
 
 class Puller
 {
@@ -13,6 +15,7 @@ class Puller
      * @var CacheManager|null
      */
     protected ?CacheManager $cache_manager = null;
+
 
     /**
      * @param  string|null  $guard
@@ -42,7 +45,7 @@ class Puller
      */
     public function newManager(string $guard = null, int $user_id = 0, string $tab = null)
     {
-        $guard = !$guard ? config('puller.guard') : $guard;
+        $guard = $guard ?: config('puller.guard');
 
         $this->cache_manager = app(
             CacheManager::class,
@@ -63,15 +66,16 @@ class Puller
 
     public function users()
     {
-        if (!$this->online_users) {
-            $this->online_users = $this->manager()->getUsers();
-        }
-
-        return $this->online_users;
+        return $this->manager()->getUsers();
     }
 
     public function isOnlineUser(int $user_id)
     {
+        if (PullerMessageMiddleware::$isRedis) {
+
+            return !!$this->manager()->redis()->exists($this->manager()->redis_key_user($user_id));
+        }
+
         return isset($this->users()[$user_id]);
     }
 

@@ -3,6 +3,7 @@
 namespace Bfg\Puller;
 
 use Bfg\Puller\Commands\PullMakeCommand;
+use Bfg\Puller\Controllers\PullerKeepAliveController;
 use Bfg\Puller\Controllers\PullerMessageController;
 use Bfg\Puller\Core\BladeDirectiveAlpineStore;
 use Bfg\Puller\Core\DispatchManager;
@@ -28,7 +29,10 @@ class PullerServiceProvider extends ServiceProvider
         \Route::macro('puller', function (string $guard = null, bool $authorized = null) {
             $guard = $guard ?: config('puller.guard');
             $authorized = $authorized ?: config('puller.authorized');
-            \Route::get('/puller/message', PullerMessageController::class)
+            \Route::get('/puller/keep-alive', PullerKeepAliveController::class)
+                ->middleware(['web', "puller:{$guard}," . ($authorized ? 'auth' : 'all')])
+                ->name('puller.keep-alive');
+            \Route::post('/puller/message/{name}', PullerMessageController::class)
                 ->middleware(['web', "puller:{$guard}," . ($authorized ? 'auth' : 'all')])
                 ->name('puller.message');
         });

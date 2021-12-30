@@ -115,9 +115,70 @@ class DispatchManager
 
                 if ($manager->isHasUser()) {
 
-                    $manager->setTabTask($hydratedObject);
+                    return $manager->setTabTask($hydratedObject);
+                }
 
-                    return true;
+            } else {
+
+                static::$queue[$guard][$for_id][] = $hydratedObject;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Dispatch worker to current tab
+     * @param ...$arguments
+     * @return bool
+     */
+    public function current(...$arguments): bool {
+        return $this->totab(
+            request()->header('Puller-KeepAlive'),
+            ...$arguments
+        );
+    }
+
+    /**
+     * Dispatch worker to selected tab
+     * @param  null  $tab
+     * @param ...$arguments
+     * @return bool
+     */
+    public function totab($tab = null, ...$arguments): bool
+    {
+        if (!$tab) {
+            return false;
+        }
+
+        $pullObject = new $this->class(...$arguments);
+
+        if ($pullObject instanceof Pull) {
+
+            foreach ($this->methods as $method) {
+
+                if (isset($method['name']) && isset($method['arguments'])) {
+
+                    $pullObject->{$method['name']}(...$method['arguments']);
+                }
+            }
+
+            $guard = $this->guard ?: $pullObject->getGuard();
+
+            $for_id = $this->for_id !== null ? $this->for_id
+                : ($pullObject->getForId() !== null ? $pullObject->getForId() : 0);
+
+            $hydratedObject = serialize($pullObject);
+
+            if (static::canDispatchImmediately()) {
+
+                $manager = \Puller::newManager($guard, $for_id, $tab);
+
+                if ($manager->isHasUser()) {
+
+                    return $manager->setTabTask($hydratedObject, (array)$tab);
                 }
 
             } else {

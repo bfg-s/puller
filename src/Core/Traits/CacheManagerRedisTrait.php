@@ -21,8 +21,7 @@ trait CacheManagerRedisTrait
 
     public function redis_key(...$params): string
     {
-        return  \Cache::getPrefix()
-            . "puller_redis:{$this->guard}:" . implode(":", $params);
+        return "puller:{$this->guard}:" . implode(":", $params);
     }
 
     public function redis_keys(string $pattern)
@@ -55,61 +54,4 @@ trait CacheManagerRedisTrait
     {
         return $this->redis_key($this->user_id, "task", '*', '*');
     }
-
-
-
-
-
-
-
-
-
-
-//    protected function redis_users()
-//    {
-//        return LaravelRedis::mget($this->redis_keys_of_users());
-//    }
-//
-//    protected function redis_user_tabs()
-//    {
-//        return LaravelRedis::mget($this->redis_keys_of_user_tabs());
-//    }
-//
-//    protected function redis_user_tasks()
-//    {
-//        return LaravelRedis::mget($this->redis_keys_of_tab_tasks());
-//    }
-//
-//
-//
-//
-//    protected function redis_keys_of_users(): array
-//    {
-//        return LaravelRedis::keys($this->redis_key_of_users());
-//    }
-//
-//    protected function redis_keys_of_user_tabs(): array
-//    {
-//        return LaravelRedis::keys("redis:tab:{$this->guard}:{$this->user_id}:*");
-//    }
-//
-//    protected function redis_keys_of_tab_tasks(): array
-//    {
-//        return LaravelRedis::keys("redis:tab:task:{$this->guard}:{$this->user_id}:{$this->tab}:*");
-//    }
-//
-//
-//
-//
-//
-//
-//    protected function redis_key_of_users(string $append = "*"): string
-//    {
-//        return "redis:user:{$this->guard}:{$this->user_id}:{$append}";
-//    }
-//
-//    protected function redis_key_of_user_tab(): string
-//    {
-//        return "puller:tab:{$this->guard}:{$this->user_id}:{$this->tab}";
-//    }
 }

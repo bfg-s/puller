@@ -8,7 +8,11 @@ use Closure;
 
 class PullerMessageMiddleware
 {
+    static string $guard = "web";
+
     static bool $isRedis = false;
+
+    static int $tabLifetime = 3;
 
     /**
      * @var CacheManager
@@ -34,6 +38,8 @@ class PullerMessageMiddleware
         header('Cache-Control: no-cache');
 
         if (!$guard) $guard = "web";
+
+        PullerMessageMiddleware::$guard = $guard;
 
         $authGuard = \Auth::guard($guard);
 
@@ -87,7 +93,16 @@ class PullerMessageMiddleware
 
             $this->manager->emitOnCloseTabEvent();
 
-            if (!$this->manager->isHasUser()) {
+            if (static::$isRedis) {
+
+                $tabs = $this->manager->redis_keys($this->manager->redis_key_user_tab("*"));
+
+                if (count($tabs) <= 1) {
+
+                    $this->manager->emitOnUserOfflineEvent();
+                }
+
+            } else if (!$this->manager->isHasUser()) {
 
                 $this->manager->emitOnUserOfflineEvent();
             }

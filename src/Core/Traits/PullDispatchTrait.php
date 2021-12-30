@@ -44,6 +44,25 @@ trait PullDispatchTrait
     }
 
     /**
+     * @param ...$arguments
+     * @return bool
+     */
+    public static function current(...$arguments): bool
+    {
+        return static::new()->current(...$arguments);
+    }
+
+    /**
+     * @param  null  $tab
+     * @param ...$arguments
+     * @return bool
+     */
+    public static function totab($tab = null, ...$arguments): bool
+    {
+        return static::new()->totab($tab, ...$arguments);
+    }
+
+    /**
      * @return DispatchManager|static
      */
     public static function new()

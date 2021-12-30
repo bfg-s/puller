@@ -132,19 +132,23 @@ class MyTestPull extends Pull
     }
 }
 ```
-Submit the Puller worker:
+
+### Dispatch to everyone tabs of selected user
 ```php
 \App\Pulls\MyTestPull::for(\Auth::user())
     ->dispatch('Administrator');
 ```
-
 ### Dispatch to everyone online user
 ```php
 \App\Pulls\MyTestPull::everyone('Administrator');
 ```
-With like:
+### Dispatch to current tab (if exists)
 ```php
-\App\Pulls\MyTestPull::new()->like('my_test')->everyone('Administrator');
+\App\Pulls\MyTestPull::new()->like('my_test')->current('Administrator');
+```
+### Dispatch to selected tab
+```php
+\App\Pulls\MyTestPull::new()->like('my_test')->totab($tabid, 'Administrator');
 ```
 
 ### Livewire emit
@@ -225,11 +229,11 @@ Alpine store:
 
 Alpine blade directive:
 ```blade
-@alpineStore('test', ['state' => true], true)
+@alpineStore('test', ['state' => true])
 @alpineStores([
     'chat' => ['list' => []],
     'online' => ['count' => 0],
-], true)
+])
 ```
 Generated:
 ```html

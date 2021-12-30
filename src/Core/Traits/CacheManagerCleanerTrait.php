@@ -8,16 +8,7 @@ trait CacheManagerCleanerTrait
 {
     public function clearTabs()
     {
-        if (PullerMessageMiddleware::$isRedis) {
-
-            $this->redis()->del(
-                $this->redis_keys($this->redis_key_user_tab('*'))
-            );
-            $this->redis()->del(
-                $this->redis_keys($this->redis_key_user_any_task())
-            );
-
-        } else {
+        if (!PullerMessageMiddleware::$isRedis) {
             \Cache::set($this->key_of_tabs(), []);
         }
     }
@@ -48,47 +39,28 @@ trait CacheManagerCleanerTrait
 
     public function removeTab()
     {
-        if (PullerMessageMiddleware::$isRedis) {
+        if (!PullerMessageMiddleware::$isRedis) {
+
+            $this->removeOverdueTab();
+            $list = $this->getTabs();
 
             if ($this->tab && $this->isHasTab()) {
-
-                $this->redis()->del($this->redis_key_user_tab($this->tab));
-                $this->redis()->del(
-                    $this->redis_keys($this->redis_key_user_task("*"))
-                );
+                unset($list[$this->tab]);
+                \Cache::set($this->key_of_tabs(), $list);
             }
 
-            return $this;
+            $this->user_off = !count($list);
         }
-
-        $this->removeOverdueTab();
-        $list = $this->getTabs();
-
-        if ($this->tab && $this->isHasTab()) {
-            unset($list[$this->tab]);
-            \Cache::set($this->key_of_tabs(), $list);
-        }
-
-        $this->user_off = !count($list);
 
         return $this;
     }
 
     public function removeOverdueTab()
     {
-        if (PullerMessageMiddleware::$isRedis) {
-
-            $mDel = [];
-            foreach ($this->getTabs() as $tab => $time) {
-                if ($time < (time()-2)) {
-                    $mDel[] = $this->redis_key_user_tab($tab);
-                }
-            }
-            $this->redis()->del($mDel);
-        } else {
+        if (!PullerMessageMiddleware::$isRedis) {
             $list = [];
             foreach ($this->getTabs() as $tab => $item) {
-                if ($item['touched'] > (time()-2)) {
+                if ($item['touched'] > (time()-PullerMessageMiddleware::$tabLifetime)) {
                     $list[$tab] = $item;
                 }
             }
@@ -100,14 +72,7 @@ trait CacheManagerCleanerTrait
 
     public function removeUser()
     {
-        if (PullerMessageMiddleware::$isRedis) {
-
-            if (!count($this->redis_keys($this->redis_key_user_tab('*')))) {
-
-                $this->redis()->del($this->redis_key_user($this->user_id));
-            }
-        } else {
-
+        if (!PullerMessageMiddleware::$isRedis) {
             if ($this->user_off) {
                 $list = $this->getUsers();
                 unset($list[$this->user_id]);

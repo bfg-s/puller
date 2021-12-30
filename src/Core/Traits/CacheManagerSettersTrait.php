@@ -13,40 +13,37 @@ trait CacheManagerSettersTrait
         return $this;
     }
 
-    public function setTabTask($tasks)
+    public function setTabTask($tasks, array $tabs = null)
     {
         if (is_string($tasks)) {
             $tasks = [$tasks];
         }
 
         if (is_array($tasks)) {
-
             if (PullerMessageMiddleware::$isRedis) {
-                $mSet = [];
                 $oldTab = $this->tab;
-                foreach ($this->getTabs() as $tab => $time) {
-                    foreach ($tasks as $k=>$task) {
-                        if ($time >= (time()-2)) {
-                            $this->tab = $tab;
-                            $mSet[$this->redis_key_user_task(uniqid($time.'.'.time().'.'.$k.'.'))] = $task;
-                        }
+                $list = $tabs ?: $this->getTabs();
+                foreach ($list as $tab => $time) {
+                    foreach ($tasks as $task) {
+                        $this->tab = is_numeric($tab) ? $time : $tab;
+                        $this->redis()->set($this->redis_key_user_task(uniqid(time())), $task, PullerMessageMiddleware::$tabLifetime);
                     }
                 }
                 $this->tab = $oldTab;
-                $this->redis()->mset($mSet);
+                return true;
             } else {
                 $list = $this->getTabs();
-
                 foreach ($list as $tab => $item) {
-                    $list[$tab]['tasks'] = array_merge(
-                        $item['tasks'], $tasks
-                    );
+                    if (!$tabs || in_array($tab, $tabs)) {
+                        $list[$tab]['tasks'] = array_merge(
+                            $item['tasks'], $tasks
+                        );
+                    }
                 }
 
                 \Cache::set($this->key_of_tabs(), $list);
+                return true;
             }
-
-            return true;
         }
 
         return false;
@@ -57,7 +54,11 @@ trait CacheManagerSettersTrait
         if (PullerMessageMiddleware::$isRedis && $this->tab) {
 
             $this->redis()->set(
-                $this->redis_key_user_tab($this->tab), time()
+                $this->redis_key_user($this->user_id), time(), PullerMessageMiddleware::$tabLifetime
+            );
+
+            $this->redis()->set(
+                $this->redis_key_user_tab($this->tab), time(), PullerMessageMiddleware::$tabLifetime
             );
 
         } else if ($this->tab) {

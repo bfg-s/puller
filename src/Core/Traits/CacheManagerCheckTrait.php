@@ -13,7 +13,8 @@ trait CacheManagerCheckTrait
             if (PullerMessageMiddleware::$isRedis) {
 
                 $this->redis()->set(
-                    $this->redis_key_user_tab($this->tab), time()
+                    $this->redis_key_user_tab($this->tab), time()+PullerMessageMiddleware::$tabLifetime,
+                    PullerMessageMiddleware::$tabLifetime
                 );
 
             } else {
@@ -39,7 +40,7 @@ trait CacheManagerCheckTrait
         if (PullerMessageMiddleware::$isRedis) {
 
             $this->redis()->set(
-                $this->redis_key_user($this->user_id), time()
+                $this->redis_key_user($this->user_id), time(), PullerMessageMiddleware::$tabLifetime
             );
 
         } else {
