@@ -29,27 +29,27 @@ trait PullDispatchTrait
      * @param ...$arguments
      * @return bool
      */
-    public static function dispatch(...$arguments): bool
+    public static function stream(...$arguments): bool
     {
-        return static::new()->dispatch(...$arguments);
+        return static::new()->stream(...$arguments);
     }
 
     /**
      * @param ...$arguments
      * @return bool
      */
-    public static function everyone(...$arguments): bool
+    public static function flux(...$arguments): bool
     {
-        return static::new()->everyone(...$arguments);
+        return static::new()->flux(...$arguments);
     }
 
     /**
      * @param ...$arguments
      * @return bool
      */
-    public static function current(...$arguments): bool
+    public static function flow(...$arguments): bool
     {
-        return static::new()->current(...$arguments);
+        return static::new()->flow(...$arguments);
     }
 
     /**

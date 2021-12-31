@@ -11,7 +11,7 @@ trait ModelWatchTrait
     ) {
         foreach (static::getDefaultObserverEvents((array)$events) as $event) {
             call_user_func([$modelClass, $event], function ($model) use ($event, $everyone) {
-                static::new()->{$everyone ? 'everyone' : 'dispatch'}($model, $event);
+                static::new()->{$everyone ? 'flux' : 'stream'}($model, $event);
             });
         }
     }
@@ -33,7 +33,7 @@ trait ModelWatchTrait
             call_user_func([$modelClass, $event], function ($model) use ($event, $owner_field, $everyone) {
                 foreach ((array)$owner_field as $field) {
                     if ($model->{$field}) {
-                        static::new()->for($model->{$field})->{$everyone ? 'everyone' : 'dispatch'}($model, $event);
+                        static::new()->for($model->{$field})->{$everyone ? 'flux' : 'stream'}($model, $event);
                     }
                 }
             });

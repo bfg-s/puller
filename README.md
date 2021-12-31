@@ -55,8 +55,7 @@ document.addEventListener('my_test', function ({detail}) {
 \Puller::new()
     ->for(Auth::user())
     ->like('my_test')
-    ->with('Hello world!')
-    ->dispatch();
+    ->stream('Hello world!');
 ```
 Further, in the browser, in the developer console, you will see the reaction.
 
@@ -106,7 +105,7 @@ document.addEventListener('my_test_pull', function ({detail}) { //
 Submit the Puller worker:
 ```php
 \App\Pulls\MyTestPull::for(\Auth::user())
-    ->dispatch();
+    ->stream();
 ```
 Further, in the browser, in the developer console, you will see the reaction.
 
@@ -136,18 +135,20 @@ class MyTestPull extends Pull
 ### Dispatch to everyone tabs of selected user
 ```php
 \App\Pulls\MyTestPull::for(\Auth::user())
-    ->dispatch('Administrator');
+    ->stream('Administrator');
 ```
 ### Dispatch to everyone online user
 ```php
-\App\Pulls\MyTestPull::everyone('Administrator');
+\App\Pulls\MyTestPull::flux('Administrator');
 ```
 ### Dispatch to current tab (if exists)
 ```php
-\App\Pulls\MyTestPull::new()->like('my_test')->current('Administrator');
+\App\Pulls\MyTestPull::flow('Administrator');
+\App\Pulls\MyTestPull::new()->like('my_test')->flow('Administrator');
 ```
 ### Dispatch to selected tab
 ```php
+\App\Pulls\MyTestPull::totab($tabid, 'Administrator');
 \App\Pulls\MyTestPull::new()->like('my_test')->totab($tabid, 'Administrator');
 ```
 
@@ -156,8 +157,7 @@ Anonymous dispatch:
 ```php
 \Puller::for(Auth::user())
     ->likeLivewire('livewire_event_name')
-    ->with('Hello world!')
-    ->dispatch();
+    ->stream('Hello world!');
 ```
 Advanced dispatch:
 ```php

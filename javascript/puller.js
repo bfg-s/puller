@@ -19,42 +19,54 @@ window.onbeforeunload = function (event) {
     Puller.stop();
 };
 
-const makeRequest = (requestUrl, requestMethod = 'GET', data = null) => {
+const makeRequest = () => {
     return new Promise(function (resolve, reject) {
+        const $params = Object.keys(queryState).map(k => `${k}=${encodeURIComponent(queryState[k])}`).join('&');
         xhr = new XMLHttpRequest();
-        xhr.open(requestMethod, requestUrl);
-        if (requestMethod === 'GET') {
-            xhr.setRequestHeader("Content-Type", 'application/json');
-            xhr.setRequestHeader("Cache-Control", "no-cache");
-        } else {
-            xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-            if (token) {
-                xhr.setRequestHeader("X-CSRF-TOKEN", token.content);
-            }
-        }
+        xhr.open('GET', url + ($params ? `?${$params}` : ''));
+        xhr.setRequestHeader("Cache-Control", "no-cache");
+        xhr.setRequestHeader("Content-Type", 'application/json');
         xhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(xhr.response);
             } else {
-                reject({
-                    status: this.status,
-                    statusText: xhr.statusText
-                });
+                reject({status: this.status, statusText: xhr.statusText});
             }
         };
         xhr.onerror = function () {
-            reject({
-                status: this.status,
-                statusText: xhr.statusText
-            });
+            reject({status: this.status, statusText: xhr.statusText});
+        };
+        xhr.send();
+    });
+};
+
+const makeMessageRequest = (name, data) => {
+    return new Promise(function (resolve, reject) {
+        let messageXhr = new XMLHttpRequest();
+        messageXhr.open('POST', messageUrl + `/${name}`);
+        messageXhr.setRequestHeader("Cache-Control", "no-cache");
+        messageXhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+        if (token) {
+            messageXhr.setRequestHeader("X-CSRF-TOKEN", token.content);
+        }
+        messageXhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
+        messageXhr.onload = function () {
+            if (this.status >= 200 && this.status < 300) {
+                resolve(messageXhr.response);
+            } else {
+                reject({status: this.status, statusText: messageXhr.statusText});
+            }
+        };
+        messageXhr.onerror = function () {
+            reject({status: this.status, statusText: messageXhr.statusText});
         };
         if (data && typeof data === 'object') {
             const formData = new FormData();
             Object.keys(data).map(k => formData.append(k, data[k]))
-            xhr.send(formData);
+            messageXhr.send(formData);
         } else {
-            xhr.send();
+            messageXhr.send();
         }
     });
 };
@@ -66,8 +78,7 @@ const subscribe = () => {
         clearTimeout(timer);
     }
     timer = setTimeout(() => {
-        const $params = Object.keys(queryState).map(k => `${k}=${encodeURIComponent(queryState[k])}`).join('&');
-        makeRequest(url + ($params ? `?${$params}` : '')).then((result) => {
+        makeRequest().then((result) => {
             applyGlobalAnswer(result);
             subscribe();
         }).catch((e) => {
@@ -79,17 +90,11 @@ const subscribe = () => {
     }, 500);
 };
 
-const applyGlobalAnswer = (result) => {
-    result = String(result).trim();
+const applyGlobalAnswer = (responseResult) => {
+    const result = String(responseResult).trim();
     const resultJson = result ? JSON.parse(result) : null;
-    // if (resultJson && Array.isArray(resultJson)) {
-    //     resultJson.map((newResult) => {
-    //
-    //     });
-    // }
-
     if (resultJson && resultJson.results && Array.isArray(resultJson.results)) {
-        const results = resultJson.results;
+        let results = resultJson.results;
         results.map(applyAnswer);
     }
     if (resultJson && resultJson.states && typeof resultJson.states === 'object') {
@@ -109,7 +114,6 @@ const channels = {
 const applyAnswer = (cmd) => {
     if (cmd.name) {
         const moduleTest = /^([^:]+)::(.*)$/.exec(cmd.name);
-
         if (moduleTest) {
             if (moduleTest[1] && moduleTest[2]) {
                 if (channels[moduleTest[1]]) {
@@ -166,7 +170,7 @@ window.Puller = {
     },
     message: async (name, data) => {
         if (!name) throw "Enter a message name!";
-        await makeRequest(messageUrl + `/${name}`, 'POST', data).then(function (result) {
+        await makeMessageRequest(name, data).then(function (result) {
             applyGlobalAnswer(result);
         });
     },

@@ -16,6 +16,59 @@ class Puller
      */
     protected ?CacheManager $cache_manager = null;
 
+    protected $tab = null;
+    protected $guard = null;
+    protected $user_id = null;
+
+    public function myTab()
+    {
+        return request()->header('Puller-KeepAlive');
+    }
+
+    public function currentTab()
+    {
+        return $this->tab ?: $this->myTab();
+    }
+
+    public function setTab(string $tab = null)
+    {
+        if ($tab !== null) {
+            $this->tab = $tab;
+            $this->cache_manager = null;
+        }
+
+        return $this;
+    }
+
+    public function currentGuard()
+    {
+        return $this->guard ?: config('puller.guard');
+    }
+
+    public function setGuard(string $guard = null)
+    {
+        if ($guard !== null) {
+            $this->guard = $guard;
+            $this->cache_manager = null;
+        }
+
+        return $this;
+    }
+
+    public function currentUserId()
+    {
+        return $this->user_id ?: \Auth::guard($this->currentGuard())->id();
+    }
+
+    public function setUserId(int $user_id = null)
+    {
+        if ($user_id !== null) {
+            $this->user_id = $user_id;
+            $this->cache_manager = null;
+        }
+
+        return $this;
+    }
 
     /**
      * @param  string|null  $guard
@@ -36,29 +89,13 @@ class Puller
         return Pull::for($user);
     }
 
-    /**
-     * Maker of cache
-     * @param  string|null  $guard
-     * @param  int  $user_id
-     * @param  string|null  $tab
-     * @return CacheManager|\Illuminate\Contracts\Foundation\Application|mixed|null
-     */
-    public function newManager(string $guard = null, int $user_id = 0, string $tab = null)
-    {
-        $guard = $guard ?: config('puller.guard');
-
-        $this->cache_manager = app(
-            CacheManager::class,
-            compact('guard', 'user_id', 'tab')
-        );
-
-        return $this->cache_manager;
-    }
-
     public function manager()
     {
         if (!$this->cache_manager) {
-            return $this->newManager();
+            $this->cache_manager = app(
+                CacheManager::class,
+                ['guard' => $this->currentGuard(), 'user_id' => $this->currentUserId(), 'tab' => $this->currentTab()]
+            );
         }
 
         return $this->cache_manager;

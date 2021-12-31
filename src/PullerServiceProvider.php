@@ -9,6 +9,7 @@ use Bfg\Puller\Core\BladeDirectiveAlpineStore;
 use Bfg\Puller\Core\DispatchManager;
 use Bfg\Puller\Core\Shutdown;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
+use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
 
 class PullerServiceProvider extends ServiceProvider

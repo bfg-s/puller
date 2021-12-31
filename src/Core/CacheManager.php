@@ -26,13 +26,13 @@ class CacheManager
     public bool $user_off = false;
 
     public function __construct(
-        string $guard,
-        int $user_id = 0,
+        string $guard = null,
+        $user_id = 0,
         string $tab = null
     ) {
-        $this->tab = $tab ?? request()->header('Puller-KeepAlive');
+        $this->tab = $tab;
         $this->guard = $guard;
-        $this->user_id = $user_id;
+        $this->user_id = is_int($user_id) ? $user_id : 0;
     }
 
     protected function key_of_tabs(): string

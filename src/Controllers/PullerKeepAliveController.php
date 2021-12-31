@@ -2,16 +2,15 @@
 
 namespace Bfg\Puller\Controllers;
 
+use Bfg\Puller\Core\Dehydrator;
 use Bfg\Puller\Pull;
 use Illuminate\Http\Request;
 
-class PullerKeepAliveController
+class PullerKeepAliveController extends PullerController
 {
     protected $seconds = 0;
 
     protected $delays = [];
-
-    protected $states = [];
 
     public function __invoke(Request $request)
     {
@@ -19,6 +18,8 @@ class PullerKeepAliveController
             ob_get_contents();
             ob_end_clean();
         }
+
+        PullerMessageController::$run = true;
 
         $manager = \Puller::manager();
 
@@ -35,25 +36,26 @@ class PullerKeepAliveController
                 break;
             }
 
-            $results = [];
-
             if ($manager->isTaskExists()) {
                 $objects = $manager->getTab();
-                $results = $this->applyTasks($objects['tasks']);
+                //$results = $this->applyTasks($objects['tasks']);
+                $this->applyTasks($objects['tasks']);
                 $manager->clearTab();
+            }
+
+            if (PullerMessageController::$queue) {
+
+                $this->applyTasks(PullerMessageController::$queue, true);
             }
 
             if (isset($this->delays[$this->seconds])) {
 
-                $results = array_merge($results, $this->delays[$this->seconds]);
+                $this->results = array_merge($this->results, $this->delays[$this->seconds]);
                 unset($this->delays[$this->seconds]);
             }
 
-            $states = $this->states;
-
-            if ($results || $states) {
-                $this->states = [];
-                return ['results' => $results, 'states' => $states];
+            if ($this->hasResponse()) {
+                return $this->response();
             } else {
                 echo str_pad('',512)."\n";
                 flush();
@@ -69,7 +71,38 @@ class PullerKeepAliveController
         flush();
     }
 
-    protected function applyTasks(array $tasks)
+    protected function applyTasks(array $tasks, bool $queue = false)
+    {
+        Dehydrator::collection($tasks, function (Dehydrator $dehydrator, $key) use ($queue) {
+            if ($queue) {
+                unset(PullerMessageController::$queue[$key]);
+            }
+            $this->states = array_merge($this->states, $dehydrator->states);
+            if ($dehydrator->delay) {
+                $this->delays[$this->seconds+$dehydrator->delay][] = $dehydrator->response();
+            } else {
+                $this->results[] = $dehydrator->response();
+            }
+        });
+
+        if ($queue && count(PullerMessageController::$queue)) {
+
+            $this->applyTasks(PullerMessageController::$queue, true);
+        }
+
+//        return static::parseTasks($tasks, function ($name, $result, Pull $pull) {
+//            $delay = (int)$pull->getDelay();
+//            $toTask = ['name' => $name, 'detail' => $result];
+//            $this->states = array_merge($this->states, $pull->getStates());
+//            if ($delay) {
+//                $this->delays[$this->seconds+$delay][] = $toTask;
+//                return null;
+//            }
+//            return $toTask;
+//        });
+    }
+
+    protected function parseTasks(array $tasks, callable $cb)
     {
         $results = [];
         foreach ($tasks as $task) {
@@ -79,14 +112,10 @@ class PullerKeepAliveController
                     $handleResult = app()->call([$taskObject, 'handle']);
                     if ($taskObject->access()) {
                         $name = $taskObject->getName() ?? 'pull';
-                        $delay = (int)$taskObject->getDelay();
-                        $result = ['name' => $name, 'detail' => $handleResult];
-                        if ($delay) {
-                            $this->delays[$this->seconds+$delay][] = $result;
-                        } else {
+                        $result = $cb($name, $handleResult, $taskObject);
+                        if ($result) {
                             $results[] = $result;
                         }
-                        $this->states = array_merge($this->states, $taskObject->getQuery());
                     }
                 }
             } catch (\Throwable $throwable) {

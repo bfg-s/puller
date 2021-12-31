@@ -2,7 +2,7 @@
 
 if (!function_exists('pullEmit')) {
 
-    function pullEmit (string $name, array $detail = []) {
+    function pullEmit (string $name, $detail = null) {
         return compact('name', 'detail');
     }
 }

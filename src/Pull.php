@@ -19,9 +19,14 @@ class Pull
 
     protected $handle_data = null;
 
-    protected $query = [];
+    protected array $states = [];
 
     protected $delay = 0;
+
+    public function __construct($handle_data = null)
+    {
+        $this->handle_data = $handle_data;
+    }
 
     public function getDelay()
     {
@@ -35,9 +40,9 @@ class Pull
         return $this;
     }
 
-    public function query(array $query = [])
+    public function states(array $states = [])
     {
-        $this->query = $query;
+        $this->states = $states;
 
         return $this;
     }
@@ -47,9 +52,9 @@ class Pull
         return true;
     }
 
-    public function getQuery()
+    public function getStates()
     {
-        return $this->query;
+        return $this->states;
     }
 
     public function handle() {
@@ -72,12 +77,12 @@ class Pull
 
     public function getGuard()
     {
-        return $this->guard ?? config('puller.guard');
+        return $this->guard;
     }
 
     public function getForId()
     {
-        return $this->for_id !== null ? $this->for_id : \Auth::id();
+        return $this->for_id;
     }
 
 
@@ -98,13 +103,6 @@ class Pull
     public function likeAlpine(string $name)
     {
         $this->name = "alpine::" . $name;
-
-        return $this;
-    }
-
-    public function with($handle)
-    {
-        $this->handle_data = $handle;
 
         return $this;
     }

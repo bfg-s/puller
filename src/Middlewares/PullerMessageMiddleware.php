@@ -43,11 +43,7 @@ class PullerMessageMiddleware
 
         $authGuard = \Auth::guard($guard);
 
-        $this->manager = \Puller::newManager(
-            $guard,
-            ($authGuard->id() ?: 0),
-            $request->header('Puller-KeepAlive')
-        );
+        $this->manager = \Puller::setGuard($guard)->manager();
 
         if ($mode == "auth" && $authGuard->guest()) {
 

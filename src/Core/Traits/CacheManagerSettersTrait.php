@@ -13,7 +13,7 @@ trait CacheManagerSettersTrait
         return $this;
     }
 
-    public function setTabTask($tasks, array $tabs = null)
+    public function setTabTask($tasks, array $tabs = null, array $excludedTabs = null)
     {
         if (is_string($tasks)) {
             $tasks = [$tasks];
@@ -26,7 +26,9 @@ trait CacheManagerSettersTrait
                 foreach ($list as $tab => $time) {
                     foreach ($tasks as $task) {
                         $this->tab = is_numeric($tab) ? $time : $tab;
-                        $this->redis()->set($this->redis_key_user_task(uniqid(time())), $task, PullerMessageMiddleware::$tabLifetime);
+                        if (!$excludedTabs || !in_array($this->tab, $excludedTabs)) {
+                            $this->redis()->set($this->redis_key_user_task(uniqid(time())), $task, PullerMessageMiddleware::$tabLifetime);
+                        }
                     }
                 }
                 $this->tab = $oldTab;
@@ -35,9 +37,11 @@ trait CacheManagerSettersTrait
                 $list = $this->getTabs();
                 foreach ($list as $tab => $item) {
                     if (!$tabs || in_array($tab, $tabs)) {
-                        $list[$tab]['tasks'] = array_merge(
-                            $item['tasks'], $tasks
-                        );
+                        if (!$excludedTabs || !in_array($this->tab, $excludedTabs)) {
+                            $list[$tab]['tasks'] = array_merge(
+                                $item['tasks'], $tasks
+                            );
+                        }
                     }
                 }
 
