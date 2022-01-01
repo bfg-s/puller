@@ -24,11 +24,6 @@
             "helpers.php"
         ]
     },
-    "autoload-dev": {
-        "psr-4": {
-            "Bfg\\Puller\\Tests\\": "tests"
-        }
-    },
     "extra": {
         "laravel": {
             "providers": [
