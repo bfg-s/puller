@@ -231,7 +231,7 @@ class DispatchManager
                 if (static::canDispatchImmediately()) {
                     $manager = $data->user($id)->manager();
                     $serialize = $data->serialize();
-                    $exclude[] = PullerController::addQueue($serialize,
+                    $exclude = PullerController::addQueue($serialize,
                         $manager->tab && $manager->tab == \Puller::myTab()) ?
                         [$manager->tab] : [];
                     $manager->setTabTask($data->serialize(), null, $exclude);
