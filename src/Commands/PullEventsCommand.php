@@ -52,13 +52,13 @@ class PullEventsCommand extends Command
                             preg_replace("/.*(".preg_quote($pattern).")(.*)/", "$2", $event),
                             '\\'
                         ), '-'));
-                        $sortedList[] = [$name, $event, $guard];
+                        $sortedList[] = [$name, $event, $guard, class_exists($event) ? "<info>Yes</info>" : "<comment>No</comment>"];
                     }
                 }
             }
         }
 
-        $this->table(['Event Name', 'Event Class', 'Event Guard'], $sortedList);
+        $this->table(['Event Name', 'Event Class', 'Event Guard', 'Exists'], $sortedList);
 
         return 0;
     }
