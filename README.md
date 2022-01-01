@@ -244,8 +244,10 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
     info("User $event->user_id online");
 });
 \Puller::onOffline(callable);
+\Puller::onOnlineAndOffline(callable);
 \Puller::onNewTab(callable);
 \Puller::onCloseTab(callable);
+\Puller::onNewAndCloseTab(callable);
 ```
 
 ## Model watching

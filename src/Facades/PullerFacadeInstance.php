@@ -206,6 +206,14 @@ class PullerFacadeInstance
         \Event::listen(\Bfg\Puller\Events\UserOfflineEvent::class, $callable);
     }
 
+    public function onOnlineAndOffline(callable $callable)
+    {
+        $this->onOnline($callable);
+        $this->onOffline($callable);
+    }
+
+
+
     public function onNewTab(callable $callable)
     {
         \Event::listen(\Bfg\Puller\Events\UserNewTabEvent::class, $callable);
@@ -214,5 +222,11 @@ class PullerFacadeInstance
     public function onCloseTab(callable $callable)
     {
         \Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, $callable);
+    }
+
+    public function onNewAndCloseTab(callable $callable)
+    {
+        $this->onNewTab($callable);
+        $this->onCloseTab($callable);
     }
 }
