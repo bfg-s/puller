@@ -19,6 +19,27 @@ window.onbeforeunload = function (event) {
     Puller.stop();
 };
 
+let error_callbacks = {};
+let errors = {};
+let status = 0;
+
+const errorCollections = (errorList = null, errorStatus = 0) => {
+    if (!errorList) {
+        status = 0; errors = {};
+    } else {
+        errorList = String(errorList).trim();
+        try {
+            errors = JSON.parse(errorList);
+            status = errorStatus;
+        } catch (e) {
+            status = e.status ? e.status : -1;
+            errors = {};
+        }
+    }
+    window.Puller.dispatch("puller:task:error", {status, errors});
+    window.Puller.dispatch(`puller:task:error:${status}`, errors);
+};
+
 const makeRequest = () => {
     return new Promise(function (resolve, reject) {
         const $params = Object.keys(queryState).map(k => `${k}=${encodeURIComponent(queryState[k])}`).join('&');
@@ -31,11 +52,14 @@ const makeRequest = () => {
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(xhr.response);
+                errorCollections()
             } else {
+                errorCollections(xhr.responseText, this.status);
                 reject({status: this.status, statusText: xhr.statusText});
             }
         };
         xhr.onerror = function () {
+            errorCollections(xhr.responseText, this.status);
             reject({status: this.status, statusText: xhr.statusText});
         };
         xhr.send();
@@ -57,11 +81,14 @@ const makeMessageRequest = (name, data) => {
         messageXhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(messageXhr.response);
+                errorCollections()
             } else {
+                errorCollections(messageXhr.responseText, this.status);
                 reject({status: this.status, statusText: messageXhr.statusText});
             }
         };
         messageXhr.onerror = function () {
+            errorCollections(messageXhr.responseText, this.status);
             reject({status: this.status, statusText: messageXhr.statusText});
         };
         if (data && typeof data === 'object') {
@@ -183,7 +210,31 @@ window.Puller = {
     },
     response: (object) => {
         applyJsonResponse(object);
-    }
+    },
+    on: (event, callable) => {
+        return document.addEventListener(event, callable);
+    },
+    off: (event, callable) => {
+        return document.removeEventListener(event, callable);
+    },
+    onError: (code, callable = null) => {
+        if (callable === null) {
+            callable = code;
+            code = null;
+        }
+        return code
+            ? document.addEventListener(`puller:task:error:${code}`, callable)
+            : document.addEventListener("puller:task:error", callable);
+    },
+    offError: (code, callable = null) => {
+        if (callable === null) {
+            callable = code;
+            code = null;
+        }
+        return code
+            ? document.removeEventListener(`puller:task:error:${code}`, callable)
+            : document.removeEventListener("puller:task:error", callable);
+    },
 };
 
 window.Puller.run();
