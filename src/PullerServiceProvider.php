@@ -2,14 +2,14 @@
 
 namespace Bfg\Puller;
 
+use Bfg\Puller\Commands\PullEventsCommand;
+use Bfg\Puller\Controllers\PullerController;
 use Bfg\Puller\Commands\PullMakeCommand;
 use Bfg\Puller\Controllers\PullerKeepAliveController;
 use Bfg\Puller\Controllers\PullerMessageController;
-use Bfg\Puller\Core\BladeDirectiveAlpineStore;
 use Bfg\Puller\Core\DispatchManager;
 use Bfg\Puller\Core\Shutdown;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
-use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
 
 class PullerServiceProvider extends ServiceProvider
@@ -21,8 +21,6 @@ class PullerServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        PullerMessageMiddleware::$isRedis = config('cache.default') == 'redis';
-
         $this->mergeConfigFrom(__DIR__ . '/../config/puller.php', 'puller');
 
         \Route::aliasMiddleware('puller', PullerMessageMiddleware::class);
@@ -45,7 +43,8 @@ class PullerServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
 
             $this->commands([
-                PullMakeCommand::class
+                PullMakeCommand::class,
+                PullEventsCommand::class,
             ]);
         }
     }
@@ -58,9 +57,6 @@ class PullerServiceProvider extends ServiceProvider
     public function boot()
     {
         \Route::puller();
-
-        \Blade::directive('alpineStore', [BladeDirectiveAlpineStore::class, 'directive']);
-        \Blade::directive('alpineStores', [BladeDirectiveAlpineStore::class, 'manyDirective']);
 
         $this->publishes([
             __DIR__ . '/../config/puller.php' => config_path('puller.php')
@@ -76,6 +72,11 @@ class PullerServiceProvider extends ServiceProvider
 
         app(Shutdown::class)
             ->registerFunction([$this, 'writeCreatedJobs']);
+
+        if (PullerController::canBeRun()) {
+
+            PullerController::run();
+        }
     }
 
     public function writeCreatedJobs()

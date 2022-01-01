@@ -1,14 +1,19 @@
 <?php
 
-namespace Bfg\Puller;
+namespace Bfg\Puller\Facades;
 
 use Bfg\Puller\Core\CacheManager;
+use Bfg\Puller\Core\Trap;
+use Bfg\Puller\Interfaces\PullDefaultChannelInterface;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
-use Carbon\Carbon;
+use Bfg\Puller\Pulls\AnonymousPull;
 
-class Puller
+class PullerFacadeInstance
 {
     protected $online_users = [];
+    protected $channal_interfaces = [
+        'default' => PullDefaultChannelInterface::class
+    ];
 
     /**
      * Instance of cache manager
@@ -19,6 +24,27 @@ class Puller
     protected $tab = null;
     protected $guard = null;
     protected $user_id = null;
+    protected bool $redis_mode = false;
+
+    public function __construct()
+    {
+        $this->redis_mode = config('cache.default') == 'redis';
+    }
+
+    public function registerChannelInterface(string $interface)
+    {
+        if (defined($interface . "::CHANNEL") && $interface::CHANNEL) {
+
+            $this->channal_interfaces[$interface::CHANNEL] = $interface;
+        }
+
+        return $this;
+    }
+
+    public function channelInterfaces()
+    {
+        return $this->channal_interfaces;
+    }
 
     public function myTab()
     {
@@ -70,23 +96,28 @@ class Puller
         return $this;
     }
 
-    /**
-     * @param  string|null  $guard
-     * @return Core\DispatchManager|Pull
-     */
-    public function new(string $guard = null)
+    public function channel(string $channelName, string $name = null)
     {
-        $guard = $guard ?: config('puller.guard');
-        return Pull::guard($guard);
+        return $this->new()->channel($channelName, $name);
     }
 
     /**
      * @param $user
-     * @return Core\DispatchManager|Pull
+     * @return \Bfg\Puller\Core\DispatchManager|AnonymousPull|mixed
      */
-    public function for($user)
+    public function user($user)
     {
-        return Pull::for($user);
+        return $this->new()->user($user);
+    }
+
+    /**
+     * @param  string|null  $guard
+     * @return \Bfg\Puller\Core\DispatchManager|AnonymousPull
+     */
+    public function new(string $guard = null)
+    {
+        $guard = $guard ?: config('puller.guard');
+        return AnonymousPull::guard($guard);
     }
 
     public function manager()
@@ -108,12 +139,11 @@ class Puller
 
     public function isOnlineUser(int $user_id)
     {
-        if (PullerMessageMiddleware::$isRedis) {
-
+        return Trap::hasRedisAndCache(function ($user_id) {
             return !!$this->manager()->redis()->exists($this->manager()->redis_key_user($user_id));
-        }
-
-        return isset($this->users()[$user_id]);
+        }, function ($user_id) {
+            return isset($this->users()[$user_id]);
+        }, $user_id);
     }
 
     public function identifications()
@@ -128,6 +158,11 @@ class Puller
     public function online()
     {
         return count($this->users());
+    }
+
+    public function isRedisMode()
+    {
+        return $this->redis_mode;
     }
 
     public function onOnline(callable $callable)

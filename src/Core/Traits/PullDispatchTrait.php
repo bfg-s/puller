@@ -20,9 +20,9 @@ trait PullDispatchTrait
      * @param $user
      * @return DispatchManager|static
      */
-    public static function for($user)
+    public static function user($user)
     {
-        return static::new()->for($user);
+        return static::new()->user($user);
     }
 
     /**

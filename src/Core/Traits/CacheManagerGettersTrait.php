@@ -2,66 +2,50 @@
 
 namespace Bfg\Puller\Core\Traits;
 
+use Bfg\Puller\Core\Trap;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
 
 trait CacheManagerGettersTrait
 {
     public function getTabs()
     {
-        if (PullerMessageMiddleware::$isRedis) {
-
+        return Trap::hasRedisAndCache(function () {
             $keys = $this->redis_keys($this->redis_key_user_tab('*'));
-
             $tabs = [];
-
             foreach ($keys ?: [] as $key) {
                 $tabs[] = preg_replace('/.*:([^:]+)$/', '$1', $key);
             }
-
-            return array_combine($tabs, $this->redis()->mGet(
-                $keys
-            ) ?: []);
-        }
-        return \Cache::get($this->key_of_tabs(), []);
+            return array_combine($tabs, $this->redis()->mGet($keys) ?: []);
+        }, function () {
+            return \Cache::get($this->key_of_tabs(), []);
+        });
     }
 
     public function getTab()
     {
-        if ($this->tab) {
-
-            if (PullerMessageMiddleware::$isRedis) {
-
-                return [
-                    'tasks' => $this->redis()->mGet(
-                        $this->redis_keys($this->redis_key_user_task('*'))
-                    )
-                ];
-            }
-
-            $list = $this->getTabs();
-
-            return $list[$this->tab] ?? null;
-        }
-
-        return null;
+        return Trap::eq($this->tab, function () {
+            return Trap::hasRedisAndCache(function () {
+                return ['tasks' => $this->redis()->mGet(
+                    $this->redis_keys($this->redis_key_user_task('*'))
+                )];
+            }, function () {
+                $list = $this->getTabs();
+                return $list[$this->tab] ?? null;
+            });
+        });
     }
 
     public function getUsers()
     {
-        if (PullerMessageMiddleware::$isRedis) {
-
+        return Trap::hasRedisAndCache(function () {
             $keys = $this->redis_keys($this->redis_key_user("*"));
-
             $ids = [];
-
             foreach ($keys ?: [] as $key) {
                 $ids[] = (int)preg_replace('/.*:([^:]+)$/', '$1', $key);
             }
-
-            return array_combine($ids ?: [], $this->redis()->mGet(
-                $keys
-            ) ?: []);
-        }
-        return \Cache::get($this->key_of_users(), []);
+            return array_combine($ids ?: [], $this->redis()->mGet($keys) ?: []);
+        }, function () {
+            return \Cache::get($this->key_of_users(), []);
+        });
     }
 }

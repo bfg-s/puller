@@ -16,7 +16,7 @@ trait ModelWatchTrait
         }
     }
 
-    public static function modelWatchForEveryone(
+    public static function modelFluxWatch(
         string $modelClass,
         $events = []
     ) {
@@ -33,7 +33,7 @@ trait ModelWatchTrait
             call_user_func([$modelClass, $event], function ($model) use ($event, $owner_field, $everyone) {
                 foreach ((array)$owner_field as $field) {
                     if ($model->{$field}) {
-                        static::new()->for($model->{$field})->{$everyone ? 'flux' : 'stream'}($model, $event);
+                        static::new()->user($model->{$field})->{$everyone ? 'flux' : 'stream'}($model, $event);
                     }
                 }
             });

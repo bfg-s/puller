@@ -25,12 +25,15 @@ class Dehydrator
         $this->detail = $this->handle();
     }
 
-    public static function collection(array $collection, callable $cb)
+    public static function collection(array $collection, callable $cb, callable $each = null)
     {
         foreach ($collection as $key => $item) {
             $dehydrator = new static($item);
             if ($dehydrator->validated()) {
                 call_user_func($cb, $dehydrator, $key);
+            }
+            if ($each) {
+                call_user_func($each, $key);
             }
         }
     }

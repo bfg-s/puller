@@ -30,6 +30,9 @@ CACHE_DRIVER=redis
 ```
 > To do this, you should have the extension `Redis` for `php`.
 
+>! Attention, in this version, the use of the caching system is deprecated. 
+> In the next version `Redis` will be required as an extension.
+
 ## Usage
 In order to start using, you need to make a couple of simple things:
 
@@ -52,9 +55,8 @@ document.addEventListener('my_test', function ({detail}) {
 ```
 4. Submit the Puller command:
 ```php
-\Puller::new()
-    ->for(Auth::user())
-    ->like('my_test')
+\Puller::user(Auth::user())
+    ->channel('my_test')
     ->stream('Hello world!');
 ```
 Further, in the browser, in the developer console, you will see the reaction.
@@ -104,7 +106,7 @@ document.addEventListener('my_test_pull', function ({detail}) { //
 
 Submit the Puller worker:
 ```php
-\App\Pulls\MyTestPull::for(\Auth::user())
+\App\Pulls\MyTestPull::user(\Auth::user())
     ->stream();
 ```
 Further, in the browser, in the developer console, you will see the reaction.
@@ -132,114 +134,34 @@ class MyTestPull extends Pull
 }
 ```
 
-### Dispatch to everyone tabs of selected user
+### "stream" Dispatch to everyone tabs of selected user
+Current authorized user So will always be installed by default, 
+it is simply indicated by an example of a user transmission, 
+you can pass as a model there and the identifier.
 ```php
-\App\Pulls\MyTestPull::for(\Auth::user())
+\App\Pulls\MyTestPull::user(\Auth::user()) // Current auth user set  by default
     ->stream('Administrator');
 ```
-### Dispatch to everyone online user
+### "flux" Dispatch to everyone online user
 ```php
 \App\Pulls\MyTestPull::flux('Administrator');
 ```
-### Dispatch to current tab (if exists)
+### "flow" Dispatch to current tab (if exists)
 ```php
 \App\Pulls\MyTestPull::flow('Administrator');
-\App\Pulls\MyTestPull::new()->like('my_test')->flow('Administrator');
+\App\Pulls\MyTestPull::new()->channel('my_test')->flow('Administrator');
 ```
-### Dispatch to selected tab
+### "totab" Dispatch to selected tab
 ```php
 \App\Pulls\MyTestPull::totab($tabid, 'Administrator');
-\App\Pulls\MyTestPull::new()->like('my_test')->totab($tabid, 'Administrator');
+\App\Pulls\MyTestPull::new()->channel('my_test')->totab($tabid, 'Administrator');
 ```
 
-### Livewire emit
-Anonymous dispatch:
-```php
-\Puller::for(Auth::user())
-    ->likeLivewire('livewire_event_name')
-    ->stream('Hello world!');
-```
-Advanced dispatch:
-```php
-\App\Pulls\MyTestPull::for(\Auth::user())
-    ->likeLivewire('livewire_event_name')
-    ->dispatch();
-```
-Create default puller for Livewire:
+## Create class with dot
 ```cli
-php artisan make:pull MyTestPull --livewire
-```
-In Livewire component make event:
-```php
-class OrderTracker extends Component
-{
-    public $showNewOrderNotification = false;
- 
-    // Special Syntax: ['puller:{event}' => '{method}']
-    protected $listeners = ['puller:livewire_event_name' => 'notifyNewOrder'];
- 
-    public function notifyNewOrder()
-    {
-        $this->showNewOrderNotification = true;
-    }
-}
-```
-
-### Alpine store method call
-Anonymous dispatch:
-```php
-\Puller::for(Auth::user())
-    ->likeAlpine('alpine_store.method_name')
-    ->with('Hello world!')
-    ->dispatch();
-
-// Or
-
-\Puller::for(Auth::user())
-    ->likeAlpine('darkMode.toggle')
-    ->dispatch();
-```
-Advanced dispatch:
-```php
-\App\Pulls\MyTestPull::for(\Auth::user())
-    ->likeAlpine('alpine_store.method_name')
-    ->dispatch();
-```
-Create default puller for Alpine:
-```cli
-php artisan make:pull DarkMode_Toggle --alpine
+php artisan make:pull DarkMode_Toggle
 ```
 > Well be generated `dark_mode.toggle` name
-
-Alpine store:
-```javascript
-<script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.store('dark_mode', {
-            status: true,
-
-            toggle() { // <-- details
-                this.status = !this.status;
-            }
-        })
-    })
-</script>
-```
-> Details come to the function, or if this property will be assigned to it.
-
-Alpine blade directive:
-```blade
-@alpineStore('test', ['state' => true])
-@alpineStores([
-    'chat' => ['list' => []],
-    'online' => ['count' => 0],
-])
-```
-Generated:
-```html
-<script type='text/javascript'>document.addEventListener('alpine:init', function () {Alpine.store("test", {"state":true});})</script>
-<script type='text/javascript'>document.addEventListener('alpine:init', function () {Alpine.store("chat", {"list":[]});Alpine.store("online", {"count":0});})</script>
-```
 
 ## Puller events
 
@@ -277,6 +199,11 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
 ```
 
 ## Puller facade
+
+### Get current process tab (read from header 'Puller-KeepAlive')
+```php
+\Puller::myTab();
+```
 
 ### Create new pull
 ```php
@@ -320,7 +247,7 @@ You can use helpers for listeners of model events.
     \App\Modeld\Message::class,
     $events = [] // 'updated', 'created', 'deleted' by default
 );
-\App\Pulls\MyTestPull::modelWatchForEveryone(
+\App\Pulls\MyTestPull::modelFluxWatch(
     \App\Modeld\Message::class,
     $events = [] // 'updated', 'created', 'deleted' by default
 );
@@ -337,13 +264,50 @@ You can use helpers for listeners of model events.
 ## JavaScript
 You have a globally registered `Puller` object that is intended for external control.
 ```javascript
+Puller.tab(); // Get current tab id.
 Puller.run(); // Run subscription.
 Puller.stop(); // Stop subscription.
-Puller.restart(); // Переподключить подписку, сделает остановку и запуск
-Puller.emit(name, detail); // Эмитация ответа на `Puller`
-Puller.emitLivewire(name, detail); // Эмитация ответа на `Puller` для `Livewire`
-Puller.emitAlpine(name, detail); // Эмитация ответа на `Puller` для `Alpine`
+Puller.restart(); // Reconnect subscription will make stop and launch.
+Puller.channel(name, callback); // Add Channel handler (Alpine and Livewire are channels).
+Puller.state(name, value); // Set or unset the state for uninterrupted communication.
+Puller.emit(channel, name, detail); // Reply imitation to `Puller`.
+Puller.dispatch(eventName, detail); // Dispatch a browser event.
+Puller.message(eventName, data); // Send a message with the name of events and data for Backend.
 ```
+
+### Messaging
+`Messages` - this is a mechanism for performing tasks in a stream that distributes tasks to the current execution request and on the connections.
+
+In order to use the messaging mechanism you should know the minimum data type specification.
+
+#### What is a message on backend?
+Message is a signed request for an event. 
+What to transmit the names of the events and 
+at the same time not to transmit its full 
+range of names, the system is looking for 
+nesting in any space that is compiled depending 
+on your security guard, the default is `web` 
+So your nesting prefix will be the next `WebMessage` 
+And all created and declared Events and will cause them 
+consistently if there will be several events in one name.
+
+Event search occurs on the following pattern:
+> Send name: `my-event` or `my`;
+> 
+> Called Event: `*`\WebMessage\MyEvent
+
+> Send name: `actions:my-event` or `actions:my`;
+> 
+> Called Event: `*`\WebMessageActions\MyEvent
+
+> `*` - Maybe any value.
+
+All events `Puller` send from such an event will be inserted in 
+response to the request and the task will be distributed to what 
+a service station can be processed now and what needs to be 
+sent to others. 
+
+All transmitted values in the message will be added as a form to request.
 
 ## Changelog
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.

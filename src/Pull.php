@@ -4,10 +4,8 @@ namespace Bfg\Puller;
 
 use Bfg\Puller\Core\Traits\ModelWatchTrait;
 use Bfg\Puller\Core\Traits\PullDispatchTrait;
-use Bfg\Puller\Interfaces\PullLikeAlpineInterface;
-use Bfg\Puller\Interfaces\PullLikeLivewireInterface;
 
-class Pull
+abstract class Pull
 {
     use PullDispatchTrait, ModelWatchTrait;
 
@@ -15,7 +13,7 @@ class Pull
 
     protected ?string $name = null;
 
-    protected ?int $for_id = null;
+    protected ?int $user = null;
 
     protected $handle_data = null;
 
@@ -64,12 +62,17 @@ class Pull
 
     public function getName()
     {
+        if (
+            defined(static::class . "::CHANNEL")
+            && static::CHANNEL
+            && !strpos($this->name, '::')
+        ) {
+
+            $this->name = static::CHANNEL . "::" . $this->name;
+        }
+
         if ($this->name) {
-            if ($this instanceof PullLikeLivewireInterface) {
-                $this->likeLivewire($this->name);
-            } else if ($this instanceof PullLikeAlpineInterface) {
-                $this->likeAlpine($this->name);
-            }
+
             return $this->name;
         }
         return str_replace("._", ".", \Str::snake(str_replace('_', '.', class_basename(static::class))));
@@ -80,29 +83,14 @@ class Pull
         return $this->guard;
     }
 
-    public function getForId()
+    public function getUser()
     {
-        return $this->for_id;
+        return $this->user;
     }
 
-
-    public function like(string $name)
+    public function channel(string $channelName, string $name = null)
     {
-        $this->name = $name;
-
-        return $this;
-    }
-
-    public function likeLivewire(string $name)
-    {
-        $this->name = "livewire::" . $name;
-
-        return $this;
-    }
-
-    public function likeAlpine(string $name)
-    {
-        $this->name = "alpine::" . $name;
+        $this->name = $name ? "$channelName::$name" : $channelName;
 
         return $this;
     }

@@ -2,7 +2,6 @@
 
 namespace Bfg\Puller\Facades;
 
-use Bfg\Puller\Puller;
 use Illuminate\Support\Facades\Facade;
 
 class PullerFacade extends Facade
@@ -12,6 +11,6 @@ class PullerFacade extends Facade
      */
     protected static function getFacadeAccessor()
     {
-        return Puller::class;
+        return PullerFacadeInstance::class;
     }
 }

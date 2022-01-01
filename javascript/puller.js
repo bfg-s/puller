@@ -26,6 +26,7 @@ const makeRequest = () => {
         xhr.open('GET', url + ($params ? `?${$params}` : ''));
         xhr.setRequestHeader("Cache-Control", "no-cache");
         xhr.setRequestHeader("Content-Type", 'application/json');
+        xhr.setRequestHeader("Puller-Message", WEB_ID);
         xhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
@@ -44,13 +45,15 @@ const makeRequest = () => {
 const makeMessageRequest = (name, data) => {
     return new Promise(function (resolve, reject) {
         let messageXhr = new XMLHttpRequest();
-        messageXhr.open('POST', messageUrl + `/${name}`);
+        const $params = Object.keys(queryState).map(k => `${k}=${encodeURIComponent(queryState[k])}`).join('&');
+        messageXhr.open('POST', messageUrl + `/${name}` + ($params ? `?${$params}` : ''));
         messageXhr.setRequestHeader("Cache-Control", "no-cache");
         messageXhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
         if (token) {
             messageXhr.setRequestHeader("X-CSRF-TOKEN", token.content);
         }
         messageXhr.setRequestHeader("Puller-KeepAlive", WEB_ID);
+        messageXhr.setRequestHeader("Puller-Message", WEB_ID);
         messageXhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(messageXhr.response);
@@ -93,6 +96,10 @@ const subscribe = () => {
 const applyGlobalAnswer = (responseResult) => {
     const result = String(responseResult).trim();
     const resultJson = result ? JSON.parse(result) : null;
+    applyJsonResponse(resultJson);
+}
+
+const applyJsonResponse = (resultJson) => {
     if (resultJson && resultJson.results && Array.isArray(resultJson.results)) {
         let results = resultJson.results;
         results.map(applyAnswer);
@@ -104,12 +111,9 @@ const applyGlobalAnswer = (responseResult) => {
             Object.keys(resultJson.states).map(k => window.Puller.state(k,resultJson.states[k],false))
         }
     }
-}
-
-const channels = {
-    alpine: require('./alpineChanel'),
-    livewire: require('./livewireChanel'),
 };
+
+const channels = {};
 
 const applyAnswer = (cmd) => {
     if (cmd.name) {
@@ -128,19 +132,22 @@ const applyAnswer = (cmd) => {
 };
 
 window.Puller = {
+    tab: () => {
+        return WEB_ID;
+    },
     run: () => {
         subscribe();
     },
     stop: () => {
         xhr.abort();
     },
-    channel: (name, cb) => {
-        channels[name] = cb;
-    },
     restart: () => {
         window.Puller.stop();
         //newWebId();
         window.Puller.run();
+    },
+    channel: (name, cb) => {
+        channels[name] = cb;
     },
     state (name, value = null, restart = true) {
         if (typeof name === 'object') {
@@ -162,7 +169,7 @@ window.Puller = {
         }
         return false;
     },
-    emit: (channel, name, detail = undefined) => {
+    emit: (channel, name, detail = null) => {
         applyAnswer({name: `${channel}::${name}`, detail})
     },
     dispatch: (name, detail) => {
@@ -174,7 +181,9 @@ window.Puller = {
             applyGlobalAnswer(result);
         });
     },
+    response: (object) => {
+        applyJsonResponse(object);
+    }
 };
-
 
 window.Puller.run();

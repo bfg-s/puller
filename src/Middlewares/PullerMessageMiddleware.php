@@ -4,14 +4,11 @@ namespace Bfg\Puller\Middlewares;
 
 use Bfg\Puller\Core\CacheManager;
 use Bfg\Puller\Core\Shutdown;
+use Bfg\Puller\Core\Trap;
 use Closure;
 
 class PullerMessageMiddleware
 {
-    static string $guard = "web";
-
-    static bool $isRedis = false;
-
     static int $tabLifetime = 3;
 
     /**
@@ -30,22 +27,25 @@ class PullerMessageMiddleware
      */
     public function handle($request, Closure $next, string $guard = "web", string $mode = "auth")
     {
-        if (!$request->hasHeader('Puller-KeepAlive')) {
-
-            abort(404);
-        }
-
         header('Cache-Control: no-cache');
 
         if (!$guard) $guard = "web";
 
-        PullerMessageMiddleware::$guard = $guard;
+        if (!$request->hasHeader('Puller-KeepAlive')) {
+
+            abort(404);
+        }
 
         $authGuard = \Auth::guard($guard);
 
         $this->manager = \Puller::setGuard($guard)->manager();
 
         if ($mode == "auth" && $authGuard->guest()) {
+
+            abort(404);
+        }
+
+        if (!\Puller::myTab()) {
 
             abort(404);
         }
@@ -89,19 +89,16 @@ class PullerMessageMiddleware
 
             $this->manager->emitOnCloseTabEvent();
 
-            if (static::$isRedis) {
-
+            Trap::hasRedisAndCache(function () {
                 $tabs = $this->manager->redis_keys($this->manager->redis_key_user_tab("*"));
-
                 if (count($tabs) <= 1) {
-
                     $this->manager->emitOnUserOfflineEvent();
                 }
-
-            } else if (!$this->manager->isHasUser()) {
-
-                $this->manager->emitOnUserOfflineEvent();
-            }
+            }, function () {
+                if (!$this->manager->isHasUser()) {
+                    $this->manager->emitOnUserOfflineEvent();
+                }
+            });
         }
     }
 }

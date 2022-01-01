@@ -2,6 +2,7 @@
 
 namespace Bfg\Puller\Core\Traits;
 
+use Bfg\Puller\Controllers\PullerController;
 use Bfg\Puller\Controllers\PullerMessageController;
 use Bfg\Puller\Events\UserNewTabEvent;
 use Bfg\Puller\Events\UserCloseTabEvent;
@@ -12,9 +13,9 @@ trait CacheManagerEventEmitsTrait
 {
     public function emitOnNewTabEvent(bool $user_is_added = false)
     {
-        PullerMessageController::$run = true;
-        event(new UserNewTabEvent($this->guard, $this->user_id, $this->tab, $user_is_added));
-        PullerMessageController::$run = false;
+        PullerController::queueable(function () use ($user_is_added) {
+            event(new UserNewTabEvent($this->guard, $this->user_id, $this->tab, $user_is_added));
+        });
     }
 
     public function emitOnCloseTabEvent()
@@ -24,9 +25,9 @@ trait CacheManagerEventEmitsTrait
 
     public function emitOnUserOnlineEvent()
     {
-        PullerMessageController::$run = true;
-        event(new UserOnlineEvent($this->guard, $this->user_id, $this->tab));
-        PullerMessageController::$run = false;
+        PullerController::queueable(function () {
+            event(new UserOnlineEvent($this->guard, $this->user_id, $this->tab));
+        });
     }
 
     public function emitOnUserOfflineEvent()

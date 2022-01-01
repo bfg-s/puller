@@ -2,49 +2,41 @@
 
 namespace Bfg\Puller\Core\Traits;
 
+use Bfg\Puller\Core\Trap;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
 
 trait CacheManagerCheckTrait
 {
     public function checkTab()
     {
-        if (!$this->isHasTab()) {
+        Trap::hasRedisAndCache(function () {
+            $this->redis()->set(
+                $this->redis_key_user_tab($this->tab), time()+PullerMessageMiddleware::$tabLifetime,
+                PullerMessageMiddleware::$tabLifetime
+            );
+        }, function () {
+            $list = $this->getTabs();
 
-            if (PullerMessageMiddleware::$isRedis) {
+            $list[$this->tab] = [
+                'tasks' => [],
+                'created' => time(),
+                'connect' => time(),
+                'touched' => time(),
+            ];
 
-                $this->redis()->set(
-                    $this->redis_key_user_tab($this->tab), time()+PullerMessageMiddleware::$tabLifetime,
-                    PullerMessageMiddleware::$tabLifetime
-                );
-
-            } else {
-
-                $list = $this->getTabs();
-
-                $list[$this->tab] = [
-                    'tasks' => [],
-                    'created' => time(),
-                    'connect' => time(),
-                    'touched' => time(),
-                ];
-
-                \Cache::set($this->key_of_tabs(), $list);
-            }
-        }
+            \Cache::set($this->key_of_tabs(), $list);
+        });
 
         return $this;
     }
 
     public function checkUser()
     {
-        if (PullerMessageMiddleware::$isRedis) {
-
+        Trap::hasRedisAndCache(function () {
             $this->redis()->set(
                 $this->redis_key_user($this->user_id), time(), PullerMessageMiddleware::$tabLifetime
             );
-
-        } else {
-
+        }, function () {
             $list = $this->getUsers();
 
             if (!isset($list[$this->user_id]) || !is_array($list[$this->user_id])) {
@@ -58,7 +50,7 @@ trait CacheManagerCheckTrait
             }
 
             \Cache::set($this->key_of_users(), $list);
-        }
+        });
 
         return $this;
     }

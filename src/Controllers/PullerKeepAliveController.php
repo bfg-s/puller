@@ -19,8 +19,6 @@ class PullerKeepAliveController extends PullerController
             ob_end_clean();
         }
 
-        PullerMessageController::$run = true;
-
         $manager = \Puller::manager();
 
         $manager->tabTouchCreated();
@@ -38,14 +36,8 @@ class PullerKeepAliveController extends PullerController
 
             if ($manager->isTaskExists()) {
                 $objects = $manager->getTab();
-                //$results = $this->applyTasks($objects['tasks']);
                 $this->applyTasks($objects['tasks']);
                 $manager->clearTab();
-            }
-
-            if (PullerMessageController::$queue) {
-
-                $this->applyTasks(PullerMessageController::$queue, true);
             }
 
             if (isset($this->delays[$this->seconds])) {
@@ -53,6 +45,8 @@ class PullerKeepAliveController extends PullerController
                 $this->results = array_merge($this->results, $this->delays[$this->seconds]);
                 unset($this->delays[$this->seconds]);
             }
+
+            $this->applyTasks(static::getQueue(), true);
 
             if ($this->hasResponse()) {
                 return $this->response();
@@ -73,55 +67,18 @@ class PullerKeepAliveController extends PullerController
 
     protected function applyTasks(array $tasks, bool $queue = false)
     {
-        Dehydrator::collection($tasks, function (Dehydrator $dehydrator, $key) use ($queue) {
-            if ($queue) {
-                unset(PullerMessageController::$queue[$key]);
-            }
+        Dehydrator::collection($tasks, function (Dehydrator $dehydrator) {
             $this->states = array_merge($this->states, $dehydrator->states);
             if ($dehydrator->delay) {
                 $this->delays[$this->seconds+$dehydrator->delay][] = $dehydrator->response();
             } else {
                 $this->results[] = $dehydrator->response();
             }
+        }, function ($key) use ($queue) {
+            static::forgetQueue($key, $queue);
         });
-
-        if ($queue && count(PullerMessageController::$queue)) {
-
-            $this->applyTasks(PullerMessageController::$queue, true);
+        if (static::hasQueue()) {
+            $this->applyTasks(static::getQueue(), true);
         }
-
-//        return static::parseTasks($tasks, function ($name, $result, Pull $pull) {
-//            $delay = (int)$pull->getDelay();
-//            $toTask = ['name' => $name, 'detail' => $result];
-//            $this->states = array_merge($this->states, $pull->getStates());
-//            if ($delay) {
-//                $this->delays[$this->seconds+$delay][] = $toTask;
-//                return null;
-//            }
-//            return $toTask;
-//        });
-    }
-
-    protected function parseTasks(array $tasks, callable $cb)
-    {
-        $results = [];
-        foreach ($tasks as $task) {
-            try {
-                $taskObject = unserialize($task);
-                if ($taskObject instanceof Pull) {
-                    $handleResult = app()->call([$taskObject, 'handle']);
-                    if ($taskObject->access()) {
-                        $name = $taskObject->getName() ?? 'pull';
-                        $result = $cb($name, $handleResult, $taskObject);
-                        if ($result) {
-                            $results[] = $result;
-                        }
-                    }
-                }
-            } catch (\Throwable $throwable) {
-                \Log::error($throwable);
-            }
-        }
-        return $results;
     }
 }

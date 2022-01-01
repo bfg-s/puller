@@ -10,5 +10,5 @@ return [
     /**
      * Guard for authorized users.
      */
-    'guard' => 'web'
+    'guard' => 'web',
 ];

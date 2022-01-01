@@ -2,11 +2,8 @@
 
 namespace Bfg\Puller\Commands;
 
-use Bfg\Puller\Interfaces\PullLikeAlpineInterface;
-use Bfg\Puller\Interfaces\PullLikeLivewireInterface;
 use Illuminate\Console\Concerns\CreatesMatchingTest;
 use Illuminate\Console\GeneratorCommand;
-use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputOption;
 
 class PullMakeCommand extends GeneratorCommand
@@ -34,6 +31,8 @@ class PullMakeCommand extends GeneratorCommand
      */
     protected $type = 'Pull';
 
+    protected $interface = null;
+
     /**
      * Execute the console command.
      *
@@ -44,6 +43,22 @@ class PullMakeCommand extends GeneratorCommand
     {
         if (!is_dir(app_path('Pulls'))) {
             mkdir(app_path('Pulls'), 0777, 1);
+        }
+
+        $interfaces = \Puller::channelInterfaces();
+        $type = $this->option('type');
+
+        if (!$type || !isset($interfaces[$type])) {
+            if (count($interfaces) == 1) {
+                $type = array_key_first($interfaces);
+            } else {
+                $type = $this->choice("What \"Pull\" thrust do you want to create?", $interfaces, array_key_first($interfaces));
+                $this->type = ucfirst($type) . ' ' . $this->type;
+            }
+        }
+
+        if (isset($interfaces[$type])) {
+            $this->interface = $interfaces[$type];
         }
 
         if (parent::handle() === false && ! $this->option('force')) {
@@ -112,12 +127,9 @@ class PullMakeCommand extends GeneratorCommand
     {
         $uses = "";
         $implements = "";
-        if ($this->option('livewire')) {
-            $uses = "\nuse " . PullLikeLivewireInterface::class . ";";
-            $implements = " implements PullLikeLivewireInterface";
-        } else if ($this->option('alpine')) {
-            $uses = "\nuse " . PullLikeAlpineInterface::class . ";";
-            $implements = " implements PullLikeAlpineInterface";
+        if ($this->interface) {
+            $uses = "\nuse $this->interface;";
+            $implements = " implements " . class_basename($this->interface);
         }
 
         $stub = str_replace(
@@ -137,8 +149,7 @@ class PullMakeCommand extends GeneratorCommand
     protected function getOptions()
     {
         return [
-            ['livewire', null, InputOption::VALUE_NONE, 'Create the Livewire puller'],
-            ['alpine', null, InputOption::VALUE_NONE, 'Create the Alpine puller'],
+            ['type', null, InputOption::VALUE_OPTIONAL, 'The type of pull'],
             ['force', null, InputOption::VALUE_NONE, 'Create the class even if the model already exists'],
         ];
     }

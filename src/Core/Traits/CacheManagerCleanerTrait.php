@@ -2,27 +2,26 @@
 
 namespace Bfg\Puller\Core\Traits;
 
+use Bfg\Puller\Core\Trap;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
 
 trait CacheManagerCleanerTrait
 {
     public function clearTabs()
     {
-        if (!PullerMessageMiddleware::$isRedis) {
+        Trap::hasCache(function () {
             \Cache::set($this->key_of_tabs(), []);
-        }
+        });
     }
 
     public function clearTab()
     {
-        if ($this->tab && $this->isHasTab()) {
-            if (PullerMessageMiddleware::$isRedis) {
-
+        Trap::eq($this->tab && $this->isHasTab(), function () {
+            Trap::hasRedisAndCache(function () {
                 $this->redis()->del(
                     $this->redis_keys($this->redis_key_user_task('*'))
                 );
-
-            } else {
+            }, function () {
                 $list = $this->getTabs();
                 $list[$this->tab] = [
                     'tasks' => [],
@@ -31,16 +30,15 @@ trait CacheManagerCleanerTrait
                     'touched' => time()
                 ];
                 \Cache::set($this->key_of_tabs(), $list);
-            }
-        }
+            });
+        });
 
         return $this;
     }
 
     public function removeTab()
     {
-        if (!PullerMessageMiddleware::$isRedis) {
-
+        Trap::hasCache(function () {
             $this->removeOverdueTab();
             $list = $this->getTabs();
 
@@ -50,14 +48,14 @@ trait CacheManagerCleanerTrait
             }
 
             $this->user_off = !count($list);
-        }
+        });
 
         return $this;
     }
 
     public function removeOverdueTab()
     {
-        if (!PullerMessageMiddleware::$isRedis) {
+        Trap::hasCache(function () {
             $list = [];
             foreach ($this->getTabs() as $tab => $item) {
                 if ($item['touched'] > (time()-PullerMessageMiddleware::$tabLifetime)) {
@@ -65,20 +63,20 @@ trait CacheManagerCleanerTrait
                 }
             }
             \Cache::set($this->key_of_tabs(), $list);
-        }
+        });
 
         return $this;
     }
 
     public function removeUser()
     {
-        if (!PullerMessageMiddleware::$isRedis) {
+        Trap::hasCache(function () {
             if ($this->user_off) {
                 $list = $this->getUsers();
                 unset($list[$this->user_id]);
                 \Cache::set($this->key_of_users(), $list);
             }
-        }
+        });
 
         return $this;
     }
