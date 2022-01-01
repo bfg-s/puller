@@ -89,16 +89,9 @@ class PullerMessageMiddleware
 
             $this->manager->emitOnCloseTabEvent();
 
-            Trap::hasRedisAndCache(function () {
-                $tabs = $this->manager->redis_keys($this->manager->redis_key_user_tab("*"));
-                if (count($tabs) <= 1) {
-                    $this->manager->emitOnUserOfflineEvent();
-                }
-            }, function () {
-                if (!$this->manager->isHasUser()) {
-                    $this->manager->emitOnUserOfflineEvent();
-                }
-            });
+            if (!$this->manager->isHasUser()) {
+                $this->manager->emitOnUserOfflineEvent();
+            }
         }
     }
 }
