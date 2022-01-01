@@ -69,11 +69,7 @@ class PullerMessageMiddleware
             $this->manager->emitOnNewTabEvent($online);
         }
 
-        $response = $next($request);
-
-        //$response->header('Keep-Alive', 'timeout=5, max=1000');
-
-        return $response;
+        return $next($request);
     }
 
     /**
