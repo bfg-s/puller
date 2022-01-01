@@ -20,6 +20,7 @@ window.onbeforeunload = function (event) {
 };
 
 let error_callbacks = {};
+let message = null;
 let errors = {};
 let status = 0;
 
@@ -30,14 +31,18 @@ const errorCollections = (errorList = null, errorStatus = 0) => {
         errorList = String(errorList).trim();
         try {
             errors = JSON.parse(errorList);
+            message = errors.message ? errors.message : null;
+            if (errors && errors.errors && typeof errors.errors === 'object') {
+                errors = errors.errors;
+            }
             status = errorStatus;
         } catch (e) {
             status = e.status ? e.status : -1;
             errors = {};
         }
     }
-    window.Puller.dispatch("puller:task:error", {status, errors});
-    window.Puller.dispatch(`puller:task:error:${status}`, errors);
+    window.Puller.dispatch("puller:task:error", {status, errors, message});
+    window.Puller.dispatch(`puller:task:error:${status}`, {status, errors, message});
 };
 
 const makeRequest = () => {
@@ -216,6 +221,12 @@ window.Puller = {
     },
     off: (event, callable) => {
         return document.removeEventListener(event, callable);
+    },
+    status: () => {
+        return status;
+    },
+    errors: () => {
+        return errors;
     },
     onError: (code, callable = null) => {
         if (callable === null) {
