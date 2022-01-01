@@ -30,9 +30,6 @@ CACHE_DRIVER=redis
 ```
 > To do this, you should have the extension `Redis` for `php`.
 
->! Attention, in this version, the use of the caching system is deprecated. 
-> In the next version `Redis` will be required as an extension.
-
 ## Usage
 In order to start using, you need to make a couple of simple things:
 
@@ -68,18 +65,19 @@ Further, in the browser, in the developer console, you will see the reaction.
 
 Generate worker:
 ```cli
-php artisan make:pull MyTestPull
+php artisan make:task MyTestPull
 ```
 After that, you will have a class worker:
 `app/Pulls/MyTestPull.php`
+
 ```php
 <?php
 
 namespace App\Pulls;
 
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 
-class MyTestPull extends Pull
+class MyTestPull extends Task
 {
     public function handle () {
         //
@@ -105,22 +103,24 @@ document.addEventListener('my_test_pull', function ({detail}) { //
 > `snake_case`, `MyTestPull` will turn into a `my_test_pull`.
 
 Submit the Puller worker:
+
 ```php
-\App\Pulls\MyTestPull::user(\Auth::user())
+\App\Pulls\MyTest::user(\Auth::user())
     ->stream();
 ```
 Further, in the browser, in the developer console, you will see the reaction.
 
 ### Another example with the designer
 `app/Pulls/SayHelloPull.php`
+
 ```php
 <?php
 
 namespace App\Pulls;
 
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 
-class MyTestPull extends Pull
+class MyTestPull extends Task
 {
     protected $user_name;
 
@@ -138,28 +138,32 @@ class MyTestPull extends Pull
 Current authorized user So will always be installed by default, 
 it is simply indicated by an example of a user transmission, 
 you can pass as a model there and the identifier.
+
 ```php
-\App\Pulls\MyTestPull::user(\Auth::user()) // Current auth user set  by default
+\App\Pulls\MyTest::user(\Auth::user()) // Current auth user set  by default
     ->stream('Administrator');
 ```
 ### "flux" Dispatch to everyone online user
+
 ```php
-\App\Pulls\MyTestPull::flux('Administrator');
+\App\Pulls\MyTest::flux('Administrator');
 ```
 ### "flow" Dispatch to current tab (if exists)
+
 ```php
-\App\Pulls\MyTestPull::flow('Administrator');
-\App\Pulls\MyTestPull::new()->channel('my_test')->flow('Administrator');
+\App\Pulls\MyTest::flow('Administrator');
+\App\Pulls\MyTest::new()->channel('my_test')->flow('Administrator');
 ```
 ### "totab" Dispatch to selected tab
+
 ```php
-\App\Pulls\MyTestPull::totab($tabid, 'Administrator');
-\App\Pulls\MyTestPull::new()->channel('my_test')->totab($tabid, 'Administrator');
+\App\Pulls\MyTest::totab($tabid, 'Administrator');
+\App\Pulls\MyTest::new()->channel('my_test')->totab($tabid, 'Administrator');
 ```
 
 ## Create class with dot
 ```cli
-php artisan make:pull DarkMode_Toggle
+php artisan make:task DarkMode_Toggle
 ```
 > Well be generated `dark_mode.toggle` name
 
@@ -205,9 +209,14 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
 \Puller::myTab();
 ```
 
-### Create new pull
+### Create new anonymous task
 ```php
 \Puller::new();
+```
+
+### Create new anonymous task with channel
+```php
+\Puller::channel();
 ```
 
 ### Number of users online
@@ -242,24 +251,56 @@ Event::listen(\Bfg\Puller\Events\UserCloseTabEvent::class, function (UserCloseTa
 
 ## Model watching
 You can use helpers for listeners of model events.
+
 ```php
-\App\Pulls\MyTestPull::modelWatch( 
+\App\Pulls\MyTest::modelWatchToStream( 
     \App\Modeld\Message::class,
     $events = [] // 'updated', 'created', 'deleted' by default
 );
-\App\Pulls\MyTestPull::modelFluxWatch(
+\App\Pulls\MyTest::modelWatchToFlow(
     \App\Modeld\Message::class,
     $events = [] // 'updated', 'created', 'deleted' by default
 );
-\App\Pulls\MyTestPull::reportToOwner(
+\App\Pulls\MyTest::modelWatchToFlux(
+    \App\Modeld\Message::class,
+    $events = [] // 'updated', 'created', 'deleted' by default
+);
+\App\Pulls\MyTest::modelOwnerWatchToStream(
     \App\Modeld\Message::class,
     $owner_field = "user_id",
     $events = [] // 'updated', 'created', 'deleted' by default
 );
+\App\Pulls\MyTest::modelOwnerWatchToFlow(
+    \App\Modeld\Message::class,
+    $owner_field = "user_id",
+    $events = [] // 'updated', 'created', 'deleted' by default
+);
+\App\Pulls\MyTest::modelOwnerWatchToFlux(
+    \App\Modeld\Message::class,
+    $owner_field = "user_id",
+    $events = [] // 'updated', 'created', 'deleted' by default
+);
+// Or
+\App\Pulls\MyTest::modelWatchToFlow([
+    \App\Modeld\Message::class,
+    \App\Modeld\User::class,
+]);
 ```
 > The report will be sent to the user the identifier of which is 
 > called in this column that you indicated in the property `$owner_field` 
 > (may be an array with a list of several columns).
+
+## Move Zone
+The area of liability movement, if the zone will be released inside the zone, 
+the zone will fix it and posts the call to the mass control queue, and the general 
+call may already delegate the type of shipment. Thus, we have mass control over tasks.
+```php
+\Puller::moveZone('admin', function () {
+    \Puller::channel('test')->detail('hi');
+    \Puller::channel('test2')->detail('hi2');
+    \Puller::channel('test3')->detail('hi3');
+})->flux();
+```
 
 ## JavaScript
 You have a globally registered `Puller` object that is intended for external control.
@@ -308,6 +349,11 @@ a service station can be processed now and what needs to be
 sent to others. 
 
 All transmitted values in the message will be added as a form to request.
+
+#### View all events that can handle a message:
+```cli
+php artisan puller:events
+```
 
 ## Changelog
 Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.

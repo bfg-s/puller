@@ -2,20 +2,20 @@
 
 namespace Bfg\Puller\Core;
 
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 
 class Hydrator
 {
-    public Pull $task;
+    public Task $task;
     public ?string $guard = null;
     public ?int $user = null;
     public ?string $tab = null;
 
     /**
-     * @param  Pull  $task
+     * @param  Task  $task
      */
     public function __construct(
-        Pull $task
+        Task $task
     ) {
         $this->task = $task;
     }
@@ -23,7 +23,7 @@ class Hydrator
     public static function from(string $object, array $arguments, callable $cb = null)
     {
         $taskObject = new $object(...$arguments);
-        if ($taskObject instanceof Pull) {
+        if ($taskObject instanceof Task) {
             $hydrator = new Hydrator($taskObject);
             if ($cb) call_user_func($cb, $hydrator);
             return $hydrator;
@@ -74,7 +74,7 @@ class Hydrator
     public function manager()
     {
         return \Puller::setGuard($this->guard)
-            ->setUserId($this->user)
+            ->setUser($this->user)
             ->setTab($this->tab)
             ->manager();
     }

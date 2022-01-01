@@ -4,7 +4,7 @@ namespace Bfg\Puller;
 
 use Bfg\Puller\Commands\PullEventsCommand;
 use Bfg\Puller\Controllers\PullerController;
-use Bfg\Puller\Commands\PullMakeCommand;
+use Bfg\Puller\Commands\TaskMakeCommand;
 use Bfg\Puller\Controllers\PullerKeepAliveController;
 use Bfg\Puller\Controllers\PullerMessageController;
 use Bfg\Puller\Core\DispatchManager;
@@ -43,7 +43,7 @@ class PullerServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
 
             $this->commands([
-                PullMakeCommand::class,
+                TaskMakeCommand::class,
                 PullEventsCommand::class,
             ]);
         }

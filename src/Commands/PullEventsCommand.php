@@ -13,7 +13,7 @@ class PullEventsCommand extends Command
      *
      * @var string
      */
-    protected $name = 'pull:events';
+    protected $name = 'puller:events';
 
     /**
      * The console command description.
@@ -71,12 +71,12 @@ class PullEventsCommand extends Command
     protected function getOptions()
     {
         $return = [
-            ['guard', null, InputOption::VALUE_OPTIONAL, 'The guard of pull events'],
+            ['guard', null, InputOption::VALUE_OPTIONAL, 'The guard for show of Puller Messages'],
             ['all', null, InputOption::VALUE_NONE, 'Show events for all guards'],
         ];
 
         foreach (array_keys(config('auth.guards')) as $array_key) {
-            $return[] = [$array_key, null, InputOption::VALUE_NONE, "Select the {$array_key} guard for pull events"];
+            $return[] = [$array_key, null, InputOption::VALUE_NONE, "Select the {$array_key} guard for show of Puller Messages"];
         }
 
         return $return;

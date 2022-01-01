@@ -2,9 +2,9 @@
 
 namespace Bfg\Puller\Pulls;
 
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 
-class RedirectUserPull extends Pull
+class RedirectUserTask extends Task
 {
     protected string $url;
 

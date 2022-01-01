@@ -3,7 +3,7 @@
 namespace Bfg\Puller\Controllers;
 
 use Bfg\Puller\Core\Dehydrator;
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 use Illuminate\Http\Request;
 
 class PullerKeepAliveController extends PullerController

@@ -2,9 +2,9 @@
 
 namespace {{ namespace }};
 
-use Bfg\Puller\Pull;{{ uses }}
+use Bfg\Puller\Task;{{ uses }}
 
-class {{ class }} extends Pull{{ implements }}
+class {{ class }} extends Task{{ implements }}
 {
     public function handle () {
         //

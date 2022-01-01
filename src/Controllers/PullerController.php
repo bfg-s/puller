@@ -43,7 +43,6 @@ abstract class PullerController
     {
         if (PullerController::$run && $addCondition) {
             PullerController::$queue[] = $task;
-            //dump(PullerController::$queue);
             return true;
         }
         return false;

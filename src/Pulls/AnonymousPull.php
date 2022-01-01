@@ -2,9 +2,9 @@
 
 namespace Bfg\Puller\Pulls;
 
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 
-class AnonymousPull extends Pull
+class AnonymousPull extends Task
 {
 
 }

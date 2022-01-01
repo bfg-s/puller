@@ -6,7 +6,7 @@ use Bfg\Puller\Core\DispatchManager;
 
 trait Pullable
 {
-    public function pull(
+    public function task(
         string $class
     ) {
         return (new DispatchManager($class))->user($this);

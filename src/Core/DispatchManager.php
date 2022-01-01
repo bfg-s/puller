@@ -4,7 +4,7 @@ namespace Bfg\Puller\Core;
 
 use Bfg\Puller\Controllers\PullerController;
 use Bfg\Puller\Controllers\PullerMessageController;
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Redis;
 
@@ -44,6 +44,20 @@ class DispatchManager
     protected array $methods = [];
 
     /**
+     * Apply arguments for task class construct
+     * @var array|null
+     */
+    protected ?array $arguments = null;
+
+    /**
+     * Identifier for managing managers in queue.
+     * @var int|null
+     */
+    public ?int $id = null;
+
+    protected ?array $rememberDispatchType = null;
+
+    /**
      * @param  string|T  $class
      * @param  int|null  $user
      */
@@ -53,6 +67,7 @@ class DispatchManager
     ) {
         $this->class = $class;
         $this->user = $user;
+        $this->id = MoveZone::register($this);
     }
 
     /**
@@ -85,6 +100,31 @@ class DispatchManager
         return $this;
     }
 
+    public function detail(...$arguments)
+    {
+        $this->arguments = $arguments;
+
+        return $this;
+    }
+
+    protected function makeMoveDispatch(array $type, array $arguments)
+    {
+        if (MoveZone::has($this)) {
+            if ($arguments) $this->detail(...$arguments);
+            $this->rememberDispatchType = $type;
+            return !$this->rememberDispatchType;
+        }
+        return false;
+    }
+
+    protected function moveToOriginalDispatch(string $type)
+    {
+        if ($this->rememberDispatchType && isset($this->rememberDispatchType[0]) && $this->rememberDispatchType[0] !== $type) {
+            return $this->{$this->rememberDispatchType[0]}(...(isset($this->rememberDispatchType[1]) ? [$this->rememberDispatchType[1]]:[]));
+        }
+        return '_ignored';
+    }
+
     /**
      * Dispatch worker to selected tab
      * @param  null  $tab
@@ -93,8 +133,17 @@ class DispatchManager
      */
     public function totab($tab = null, ...$arguments): bool
     {
+        if ($this->makeMoveDispatch(['totab', $tab], $arguments)) {
+            return false;
+        } else if ($redirect = $this->moveToOriginalDispatch('totab')) {
+            if ($redirect !== '_ignored') {
+                return $redirect;
+            }
+            MoveZone::forget($this);
+        }
+
         $tab = $tab === null ? \Puller::myTab() : $tab;
-        if ($data = $this->makeTaskObjectDispatcher($arguments)) {
+        if ($data = $this->makeTaskObjectDispatcher($this->arguments ?? $arguments)) {
             /** @var CacheManager $manager */
             $manager = $data->tab($tab)->manager();
             $serialize = $data->serialize();
@@ -131,7 +180,16 @@ class DispatchManager
      */
     public function stream(...$arguments): bool
     {
-        if ($data = $this->makeTaskObjectDispatcher($arguments)) {
+        if ($this->makeMoveDispatch(['stream'], $arguments)) {
+            return false;
+        } else if ($redirect = $this->moveToOriginalDispatch('stream')) {
+            if ($redirect !== '_ignored') {
+                return $redirect;
+            }
+            MoveZone::forget($this);
+        }
+
+        if ($data = $this->makeTaskObjectDispatcher($this->arguments ?? $arguments)) {
             if (static::canDispatchImmediately()) {
                 $manager = $data->manager();
                 $serialize = $data->serialize();
@@ -159,7 +217,16 @@ class DispatchManager
      */
     public function flux(...$arguments): bool
     {
-        if ($data = $this->makeTaskObjectDispatcher($arguments)) {
+        if ($this->makeMoveDispatch(['flux'], $arguments)) {
+            return false;
+        } else if ($redirect = $this->moveToOriginalDispatch('flux')) {
+            if ($redirect !== '_ignored') {
+                return $redirect;
+            }
+            MoveZone::forget($this);
+        }
+
+        if ($data = $this->makeTaskObjectDispatcher($this->arguments ?? $arguments)) {
             foreach (\Puller::identifications() as $id) {
                 if (static::canDispatchImmediately()) {
                     $manager = $data->user($id)->manager();
@@ -200,7 +267,7 @@ class DispatchManager
     {
         foreach (static::$queue as $guard => $queueGuards) {
             foreach ($queueGuards as $user => $queueUserTasks) {
-                $manager = \Puller::setGuard($guard)->setUserId($user)->manager();
+                $manager = \Puller::setGuard($guard)->setUser($user)->manager();
                 if ($manager->isHasUser()) {
                     $manager->setTabTask($queueUserTasks);
                 }

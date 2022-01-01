@@ -2,11 +2,11 @@
 
 namespace Bfg\Puller\Core;
 
-use Bfg\Puller\Pull;
+use Bfg\Puller\Task;
 
 class Dehydrator
 {
-    public ?Pull $task = null;
+    public ?Task $task = null;
     public ?string $name = null;
     public $detail = null;
     public int $delay = 0;
@@ -58,7 +58,7 @@ class Dehydrator
         $result = unserialize($task);
 
         if (
-            $result instanceof Pull
+            $result instanceof Task
             && $result->access()
         ) {
             return $result;

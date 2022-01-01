@@ -3,8 +3,9 @@
 namespace Bfg\Puller\Facades;
 
 use Bfg\Puller\Core\CacheManager;
+use Bfg\Puller\Core\MoveZone;
 use Bfg\Puller\Core\Trap;
-use Bfg\Puller\Interfaces\PullDefaultChannelInterface;
+use Bfg\Puller\Interfaces\DefaultTaskChannel;
 use Bfg\Puller\Middlewares\PullerMessageMiddleware;
 use Bfg\Puller\Pulls\AnonymousPull;
 
@@ -12,7 +13,7 @@ class PullerFacadeInstance
 {
     protected $online_users = [];
     protected $channal_interfaces = [
-        'default' => PullDefaultChannelInterface::class
+        'default' => DefaultTaskChannel::class
     ];
 
     /**
@@ -86,7 +87,7 @@ class PullerFacadeInstance
         return $this->user_id ?: \Auth::guard($this->currentGuard())->id();
     }
 
-    public function setUserId(int $user_id = null)
+    public function setUser(int $user_id = null)
     {
         if ($user_id !== null) {
             $this->user_id = $user_id;
@@ -118,6 +119,36 @@ class PullerFacadeInstance
     {
         $guard = $guard ?: config('puller.guard');
         return AnonymousPull::guard($guard);
+    }
+
+    public function moveZone($guard = null, $user = null, $tab = null, callable $callable = null)
+    {
+        if (!$callable && $guard && !is_string($guard) && is_callable($guard)) {
+            $callable = $guard;
+            $guard = null;
+        }
+        if (!$callable && $user && !is_int($user) && is_callable($user)) {
+            $callable = $user;
+            $user = null;
+        }
+        if (!$callable && $tab && !is_string($tab) && is_callable($tab)) {
+            $callable = $tab;
+            $tab = null;
+        }
+
+        $oldManager = $this->cache_manager;
+
+        $this->cache_manager = app(CacheManager::class, [
+            'guard' => $guard ?? $this->currentGuard(),
+            'user_id' => $user!==null ? $user : $this->currentUserId(),
+            'tab' => $tab ?? $this->currentTab()
+        ]);
+
+        $zone = app(MoveZone::class)->work($callable);
+
+        $this->cache_manager = $oldManager;
+
+        return $zone;
     }
 
     public function manager()

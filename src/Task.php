@@ -5,7 +5,7 @@ namespace Bfg\Puller;
 use Bfg\Puller\Core\Traits\ModelWatchTrait;
 use Bfg\Puller\Core\Traits\PullDispatchTrait;
 
-abstract class Pull
+abstract class Task
 {
     use PullDispatchTrait, ModelWatchTrait;
 

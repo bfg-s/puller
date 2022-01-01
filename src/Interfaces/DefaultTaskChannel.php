@@ -2,7 +2,7 @@
 
 namespace Bfg\Puller\Interfaces;
 
-interface PullDefaultChannelInterface
+interface DefaultTaskChannel
 {
     const CHANNEL = "default";
 }

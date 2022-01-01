@@ -6,7 +6,7 @@ use Illuminate\Console\Concerns\CreatesMatchingTest;
 use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Input\InputOption;
 
-class PullMakeCommand extends GeneratorCommand
+class TaskMakeCommand extends GeneratorCommand
 {
     use CreatesMatchingTest;
 
@@ -15,21 +15,21 @@ class PullMakeCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $name = 'make:pull';
+    protected $name = 'make:task';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create a new Puller worker class';
+    protected $description = 'Create a new Puller task class';
 
     /**
      * The type of class being generated.
      *
      * @var string
      */
-    protected $type = 'Pull';
+    protected $type = 'Task';
 
     protected $interface = null;
 
@@ -41,18 +41,24 @@ class PullMakeCommand extends GeneratorCommand
      */
     public function handle()
     {
-        if (!is_dir(app_path('Pulls'))) {
-            mkdir(app_path('Pulls'), 0777, 1);
+        if (!is_dir(app_path('Tasks'))) {
+            mkdir(app_path('Tasks'), 0777, 1);
         }
 
         $interfaces = \Puller::channelInterfaces();
         $type = $this->option('type');
 
+        foreach (array_keys($interfaces) as $key) {
+            if ($this->option($key)) {
+                $type = $key;
+            }
+        }
+
         if (!$type || !isset($interfaces[$type])) {
             if (count($interfaces) == 1) {
                 $type = array_key_first($interfaces);
             } else {
-                $type = $this->choice("What \"Pull\" thrust do you want to create?", $interfaces, array_key_first($interfaces));
+                $type = $this->choice("What \"Task\" thrust do you want to create?", $interfaces, array_key_first($interfaces));
                 $this->type = ucfirst($type) . ' ' . $this->type;
             }
         }
@@ -73,7 +79,7 @@ class PullMakeCommand extends GeneratorCommand
      */
     protected function getStub()
     {
-        return $this->resolveStubPath('/stubs/pull.stub');
+        return $this->resolveStubPath('/stubs/task.stub');
     }
 
     /**
@@ -97,7 +103,7 @@ class PullMakeCommand extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return is_dir(app_path('Pulls')) ? $rootNamespace.'\\Pulls' : $rootNamespace;
+        return is_dir(app_path('Tasks')) ? $rootNamespace.'\\Tasks' : $rootNamespace;
     }
 
     /**
@@ -148,9 +154,15 @@ class PullMakeCommand extends GeneratorCommand
      */
     protected function getOptions()
     {
-        return [
-            ['type', null, InputOption::VALUE_OPTIONAL, 'The type of pull'],
+        $return = [
+            ['type', null, InputOption::VALUE_OPTIONAL, 'The type of task'],
             ['force', null, InputOption::VALUE_NONE, 'Create the class even if the model already exists'],
         ];
+
+        foreach (array_keys(\Puller::channelInterfaces()) as $array_key) {
+            $return[] = [$array_key, null, InputOption::VALUE_NONE, "Select the {$array_key} type for Puller Task"];
+        }
+
+        return $return;
     }
 }
