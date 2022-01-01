@@ -34,6 +34,7 @@ const errorCollections = (errorList = null, errorStatus = 0) => {
             message = errors.message ? errors.message : null;
             if (errors && errors.errors && typeof errors.errors === 'object') {
                 errors = errors.errors;
+                if (errors.message) errors = errors.message;
             }
             status = errorStatus;
         } catch (e) {
