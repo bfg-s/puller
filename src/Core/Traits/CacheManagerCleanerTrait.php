@@ -38,7 +38,14 @@ trait CacheManagerCleanerTrait
 
     public function removeTab()
     {
-        Trap::hasCache(function () {
+        Trap::hasRedisAndCache(function () {
+            $this->redis()->del(
+                $this->redis_keys($this->redis_key_user_task('*'))
+            );
+            $this->redis()->del(
+                $this->redis_keys($this->redis_key_user_tab($this->tab))
+            );
+        }, function () {
             $this->removeOverdueTab();
             $list = $this->getTabs();
 
@@ -70,7 +77,11 @@ trait CacheManagerCleanerTrait
 
     public function removeUser()
     {
-        Trap::hasCache(function () {
+        Trap::hasRedisAndCache(function () {
+            $this->redis()->del(
+                $this->redis_keys($this->redis_key_user($this->user_id))
+            );
+        }, function () {
             if ($this->user_off) {
                 $list = $this->getUsers();
                 unset($list[$this->user_id]);
