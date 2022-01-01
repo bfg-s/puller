@@ -19,14 +19,13 @@ window.onbeforeunload = function (event) {
     Puller.stop();
 };
 
-let error_callbacks = {};
-let message = null;
+let message = "";
 let errors = {};
 let status = 0;
 
 const errorCollections = (errorList = null, errorStatus = 0) => {
     if (!errorList) {
-        status = 0; errors = {};
+        status = errorStatus; errors = {}; message = "";
     } else {
         errorList = String(errorList).trim();
         try {
