@@ -99,7 +99,7 @@ const makeMessageRequest = (name, data) => {
         };
         if (data && typeof data === 'object') {
             const formData = new FormData();
-            Object.keys(data).map(k => formData.append(k, data[k]))
+            Object.keys(data).map(k => formData.append(k, data[k] === undefined ? null : data[k]))
             messageXhr.send(formData);
         } else {
             messageXhr.send();
