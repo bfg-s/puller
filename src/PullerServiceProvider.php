@@ -31,6 +31,9 @@ class PullerServiceProvider extends ServiceProvider
             \Route::get('/puller/keep-alive', PullerKeepAliveController::class)
                 ->middleware(['web', "puller:{$guard}," . ($authorized ? 'auth' : 'all')])
                 ->name('puller.keep-alive');
+            \Route::get('/puller/keep-verify', [PullerKeepAliveController::class, 'verify'])
+                ->middleware(['web', "puller:{$guard}," . ($authorized ? 'auth' : 'all')])
+                ->name('puller.keep-verify');
             \Route::post('/puller/message/{name}', PullerMessageController::class)
                 ->middleware(['web', "puller:{$guard}," . ($authorized ? 'auth' : 'all')])
                 ->name('puller.message');

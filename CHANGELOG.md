@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - Move zones.
 - Facade Helpers.
 - JavaScript helpers.
+- CSRF Token auto restore.
 - Nested sending messages.
 - Console commands to view the list of events and generating tasks.
 - Double-sided messaging support and distribution of task execution and processing.

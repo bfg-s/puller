@@ -65,6 +65,11 @@ class PullerKeepAliveController extends PullerController
         flush();
     }
 
+    public function verify()
+    {
+        return \session()->token() ?? abort(400, 'Injection error!');
+    }
+
     protected function applyTasks(array $tasks, bool $queue = false)
     {
         Dehydrator::collection($tasks, function (Dehydrator $dehydrator) {

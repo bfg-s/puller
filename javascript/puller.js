@@ -3,6 +3,7 @@ const metaPrefix = document.querySelector(`meta[name=puller-prefix]`);
 const queryState = {};
 let token = document.head.querySelector('meta[name=csrf-token]');
 let url = "/puller/keep-alive";
+let verifyUrl = "/puller/keep-verify";
 let messageUrl = "/puller/message";
 let xhr = null;
 
@@ -13,6 +14,7 @@ newWebId();
 if (metaPrefix && metaPrefix.content) {
     url = "/" + metaPrefix.content + url;
     messageUrl = "/" + metaPrefix.content + messageUrl;
+    verifyUrl = "/" + metaPrefix.content + verifyUrl;
 }
 
 window.onbeforeunload = function (event) {
@@ -22,6 +24,39 @@ window.onbeforeunload = function (event) {
 let message = "";
 let errors = {};
 let status = 0;
+
+
+let locationSearch = location.search;
+
+const showExpiredMessage = () => {
+    errCount = 0;
+    confirm(
+        'This page has expired due to inactivity.\nWould you like to refresh the page?'
+    ) && window.location.reload()
+}
+
+const restoreTocken = () => {
+    return new Promise(function (resolve, reject) {
+        let xhrRestore = new XMLHttpRequest();
+        xhrRestore.open('GET', verifyUrl);
+        xhrRestore.setRequestHeader("Puller-KeepAlive", WEB_ID);
+        xhrRestore.onload = function () {
+            if (this.status >= 200 && this.status < 300) {
+                token.content = xhrRestore.response;
+                window.Puller.restart();
+                resolve();
+            } else {
+                showExpiredMessage();
+                reject();
+            }
+        };
+        xhrRestore.onerror = function () {
+            showExpiredMessage()
+            reject();
+        };
+        xhrRestore.send();
+    });
+};
 
 const errorCollections = (errorList = null, errorStatus = 0) => {
     if (!errorList) {
@@ -49,7 +84,7 @@ const makeRequest = () => {
     return new Promise(function (resolve, reject) {
         const $params = Object.keys(queryState).map(k => `${k}=${encodeURIComponent(queryState[k])}`).join('&');
         xhr = new XMLHttpRequest();
-        xhr.open('GET', url + ($params ? `?${$params}` : ''));
+        xhr.open('GET', url + ($params ? `${locationSearch?`${locationSearch}&`:'?'}${$params}` : locationSearch));
         xhr.setRequestHeader("Cache-Control", "no-cache");
         xhr.setRequestHeader("Content-Type", 'application/json');
         xhr.setRequestHeader("Puller-Message", WEB_ID);
@@ -71,11 +106,17 @@ const makeRequest = () => {
     });
 };
 
+let errCount = 0;
+
 const makeMessageRequest = (name, data) => {
     return new Promise(function (resolve, reject) {
+        if (errCount > 10) {
+            showExpiredMessage();
+            return ;
+        }
         let messageXhr = new XMLHttpRequest();
         const $params = Object.keys(queryState).map(k => `${k}=${encodeURIComponent(queryState[k])}`).join('&');
-        messageXhr.open('POST', messageUrl + `/${name}` + ($params ? `?${$params}` : ''));
+        messageXhr.open('POST', messageUrl + `/${name}` + ($params ? `${locationSearch?`${locationSearch}&`:'?'}${$params}` : locationSearch));
         messageXhr.setRequestHeader("Cache-Control", "no-cache");
         messageXhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
         if (token) {
@@ -85,8 +126,20 @@ const makeMessageRequest = (name, data) => {
         messageXhr.setRequestHeader("Puller-Message", WEB_ID);
         messageXhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
+                errCount = 0;
                 resolve(messageXhr.response);
                 errorCollections()
+            } else if (this.status === 419) {
+
+                ++errCount;
+
+                console.log(errCount);
+                restoreTocken().then(() => {
+                    errorCollections()
+                    makeMessageRequest(name, data).then((r) => {
+                        resolve(r);
+                    })
+                });
             } else {
                 errorCollections(messageXhr.responseText, this.status);
                 reject({status: this.status, statusText: messageXhr.statusText});
@@ -179,7 +232,7 @@ window.Puller = {
     },
     restart: () => {
         window.Puller.stop();
-        //newWebId();
+        locationSearch = location.search;
         window.Puller.run();
     },
     channel: (name, cb) => {
