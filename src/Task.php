@@ -21,6 +21,8 @@ abstract class Task
 
     protected $delay = 0;
 
+    public ?string $propagation = null;
+
     public function __construct($handle_data = null)
     {
         $this->handle_data = $handle_data;

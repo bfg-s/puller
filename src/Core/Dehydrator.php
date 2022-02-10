@@ -45,7 +45,7 @@ class Dehydrator
 
     public function response()
     {
-        return ['name' => $this->name, 'detail' => $this->detail];
+        return ['name' => $this->name, 'detail' => $this->detail, 'propagation' => $this->task->propagation];
     }
 
     protected function handle()

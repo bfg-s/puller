@@ -32,6 +32,13 @@ class Hydrator
         return null;
     }
 
+    public function propagation(string $propagation)
+    {
+        $this->task->propagation = $propagation;
+
+        return $this;
+    }
+
     public function guard(?string $guard)
     {
         $this->guard = $guard ?: $this->task->getGuard();

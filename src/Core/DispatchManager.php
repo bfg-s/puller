@@ -57,6 +57,8 @@ class DispatchManager
 
     protected ?array $rememberDispatchType = null;
 
+    public ?string $propagation = null;
+
     /**
      * @param  string|T  $class
      * @param  int|null  $user
@@ -166,6 +168,7 @@ class DispatchManager
      */
     public function flow(...$arguments): bool
     {
+        $this->propagation = "flow";
         return $this->totab(
             null,
             ...$arguments
@@ -180,6 +183,7 @@ class DispatchManager
      */
     public function stream(...$arguments): bool
     {
+        $this->propagation = "stream";
         if ($this->makeMoveDispatch(['stream'], $arguments)) {
             return false;
         } else if ($redirect = $this->moveToOriginalDispatch('stream')) {
@@ -217,6 +221,7 @@ class DispatchManager
      */
     public function flux(...$arguments): bool
     {
+        $this->propagation = "flux";
         if ($this->makeMoveDispatch(['flux'], $arguments)) {
             return false;
         } else if ($redirect = $this->moveToOriginalDispatch('flux')) {
@@ -255,7 +260,10 @@ class DispatchManager
         $arguments
     ) {
         return Hydrator::from($this->class, $arguments, function (Hydrator $hydrator) {
-            $hydrator->guard($this->guard)->user($this->user)->methodsForTask($this->methods);
+            $hydrator->guard($this->guard)
+                ->user($this->user)
+                ->methodsForTask($this->methods)
+                ->propagation($this->propagation);
         });
     }
 
