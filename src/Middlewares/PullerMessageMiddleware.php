@@ -29,7 +29,7 @@ class PullerMessageMiddleware
     {
         header('Cache-Control: no-cache');
 
-        if (!$guard) $guard = "web";
+        $guard = $request->get('guard', $guard);
 
         if (!$request->hasHeader('Puller-KeepAlive')) {
 

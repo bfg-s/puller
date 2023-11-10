@@ -82,7 +82,9 @@ const errorCollections = (errorList = null, errorStatus = 0) => {
 
 const makeRequest = () => {
     return new Promise(function (resolve, reject) {
+        queryState['guard'] = (document.querySelector('[name="puller-guard"]') ? document.querySelector('[name="puller-guard"]').getAttribute('content') : null);
         const $params = Object.keys(queryState).map(k => `${k}=${encodeURIComponent(queryState[k])}`).join('&');
+
         xhr = new XMLHttpRequest();
         xhr.open('GET', url + ($params ? `${locationSearch?`${locationSearch}&`:'?'}${$params}` : locationSearch));
         xhr.setRequestHeader("Cache-Control", "no-cache");

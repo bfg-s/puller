@@ -99,7 +99,7 @@ class PullerFacadeInstance
 
     public function channel(string $channelName, string $name = null)
     {
-        return $this->new()->channel($channelName, $name);
+        return $this->new()->guard($this->guard)->user($this->user_id)->channel($channelName, $name);
     }
 
     /**
@@ -108,7 +108,7 @@ class PullerFacadeInstance
      */
     public function user($user)
     {
-        return $this->new()->user($user);
+        return $this->new()->guard($this->guard)->user($user);
     }
 
     /**
